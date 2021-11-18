@@ -3,6 +3,7 @@
 *.abi
 
 build/*
+epn.contracts*
 Testing/*
 
 # CMake ignores
