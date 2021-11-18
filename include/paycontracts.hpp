@@ -6,7 +6,7 @@
 #include <eosio/singleton.hpp>
 #include <string>
 #include <vector>
-namespace contract_name
+namespace system_epn
 {
     using eosio::check;
     using eosio::contract;
@@ -15,20 +15,20 @@ namespace contract_name
     using eosio::print;
     using std::string;
 
-    // Ricardian contracts live in ricardian/class1-ricardian.cpp
+    // Ricardian contracts live in ricardian/paycontracts-ricardian.cpp
     extern const char* sayhi_ricardian;
     extern const char* sayhialice_ricardian;
     extern const char* ricardian_clause;
 
-    class class1_contract : public contract
+    class paycontracts : public contract
     {
        public:
         using eosio::contract::contract;
 
-        class1_contract(name receiver, name code, datastream<const char*> ds);
+        paycontracts(name receiver, name code, datastream<const char*> ds);
 
         void sayhi();
 
         void sayhialice(const name& someone);
     };
-}  // namespace contract_name
+}  // namespace system_epn

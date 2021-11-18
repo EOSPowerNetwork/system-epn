@@ -10,8 +10,8 @@ using namespace eosio;
 // Setup function to install my contract to the chain
 void setup_installMyContract(test_chain& t)
 {
-    t.create_code_account(contract_name::contract_account);
-    t.set_code(contract_name::contract_account, "contract_name.wasm");
+    t.create_code_account(system_epn::contract_account);
+    t.set_code(system_epn::contract_account, "system_epn.wasm");
 }
 
 // Setup function to add some accounts to the chain
@@ -97,11 +97,11 @@ TEST_CASE("Short description of first test")
     //    * if msg != nullptr, verifies the transaction failed, and the error message contains msg
     //      within it (partial match)
 
-    expect(alice.trace<contract_name::actions::sayhi>(), nullptr);
+    expect(alice.trace<system_epn::actions::sayhi>(), nullptr);
 
-    expect(alice.trace<contract_name::actions::sayhialice>("alice"_n), nullptr);
+    expect(alice.trace<system_epn::actions::sayhialice>("alice"_n), nullptr);
 
-    expect(alice.trace<contract_name::actions::sayhialice>("bob"_n), "You may only say hi to Alice!");
+    expect(alice.trace<system_epn::actions::sayhialice>("bob"_n), "You may only say hi to Alice!");
 
 }  // First test
 
@@ -116,7 +116,7 @@ TEST_CASE("Short description of second test")
     auto alice = t.as("alice"_n);
     auto bob = t.as("bob"_n);
 
-    expect(alice.trace<contract_name::actions::action1>(), nullptr);
-    expect(alice.trace<contract_name::actions::action2>("alice"_n), nullptr);
-    expect(alice.trace<contract_name::actions::action2>("bob"_n), "Missing required authority");
+    expect(alice.trace<system_epn::actions::action1>(), nullptr);
+    expect(alice.trace<system_epn::actions::action2>("alice"_n), nullptr);
+    expect(alice.trace<system_epn::actions::action2>("bob"_n), "Missing required authority");
 }

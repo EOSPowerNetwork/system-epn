@@ -4,8 +4,8 @@ cmake_minimum_required(VERSION 3.16)
 ###################################################################
 # Main variable configurations - Customized with each project
 ## Basic configuration -- Only set the varables in this section
-set(PROJ contract_name)
-list(APPEND FILENAMES "class2" "class1")
+set(PROJ system_epn)
+list(APPEND FILENAMES "donations" "paycontracts")
 ###################################################################
 
 

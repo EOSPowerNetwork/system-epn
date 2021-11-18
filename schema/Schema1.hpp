@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace contract_name
+namespace system_epn
 {
     using eosio::name;
     using std::string;
@@ -21,4 +21,4 @@ namespace contract_name
         uint64_t primary_key() const { return to.value; }
     };
     EOSIO_REFLECT(Schema1, to, lastPayout, memoSuffix);
-}  // namespace contract_name
+}  // namespace system_epn

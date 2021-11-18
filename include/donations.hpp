@@ -7,22 +7,22 @@
 
 #include "Schema1.hpp"
 
-namespace contract_name
+namespace system_epn
 {
     using std::string;
     using namespace eosio;
-    using contract_name::Schema1;
+    using system_epn::Schema1;
 
     extern const char* action1_ricardian;
     extern const char* action2_ricardian;
     extern const char* ricardian_clause2;
 
-    class class2_contract : public contract
+    class donations : public contract
     {
        public:
         using contract::contract;
 
-        class2_contract(name receiver, name code, datastream<const char*> ds);
+        donations(name receiver, name code, datastream<const char*> ds);
 
         void action1();
 
@@ -30,4 +30,4 @@ namespace contract_name
 
         using Schema1Table = eosio::multi_index<"schema1"_n, Schema1>;
     };
-}  // namespace contract_name
+}  // namespace system_epn
