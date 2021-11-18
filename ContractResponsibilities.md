@@ -18,6 +18,7 @@ _Names of contracts and what they are used for_
 
 - Operators register
 - Sets the permissions according to the top elected BPs
+- Users create all payment contracts
 
 ## exec.epn
 
