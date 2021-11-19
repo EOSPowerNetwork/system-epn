@@ -15,8 +15,8 @@ namespace system_epn
         using sayhi = eosio::action_wrapper<"sayhi"_h, &contract_c1::sayhi, contract_account>;
         using sayhialice = eosio::action_wrapper<"sayhialice"_h, &contract_c1::sayhialice, contract_account>;
 
-        using action1 = eosio::action_wrapper<"action1"_h, &contract_c2::action1, contract_account>;
-        using action2 = eosio::action_wrapper<"action2"_h, &contract_c2::action2, contract_account>;
+        using draftdon = eosio::action_wrapper<"draftdon"_h, &contract_c2::draftdon, contract_account>;
+        //using signdon = eosio::action_wrapper<"signdon"_h, &contract_c2::signdon, contract_account>;
 
         template <typename F>
         void for_each_action(F&& f)
@@ -24,8 +24,8 @@ namespace system_epn
             f("sayhi"_h, eosio::action_type_wrapper<&contract_c1::sayhi>{}, sayhi_ricardian);
             f("sayhialice"_h, eosio::action_type_wrapper<&contract_c1::sayhialice>{}, sayhialice_ricardian, "someone");
 
-            f("action1"_h, eosio::action_type_wrapper<&contract_c2::action1>{}, action1_ricardian);
-            f("action2"_h, eosio::action_type_wrapper<&contract_c2::action2>{}, action2_ricardian, "someone");
+            f("draftdon"_h, eosio::action_type_wrapper<&contract_c2::draftdon>{}, draftdon_ricardian, "contractID");
+            //f("signdon"_h, eosio::action_type_wrapper<&contract_c2::signdon>{}, signdon_ricardian, "to", "amount", "frequency");
         }
 
         inline bool eosio_apply(uint64_t receiver, uint64_t code, uint64_t action)
@@ -41,12 +41,12 @@ namespace system_epn
                     case eosio::hash_name("sayhialice"):
                         executed = eosio::execute_action(eosio::name(receiver), eosio::name(code), &paycontracts::sayhialice);
                         break;
-                    case eosio::hash_name("action1"):
-                        executed = eosio::execute_action(eosio::name(receiver), eosio::name(code), &donations::action1);
+                    case eosio::hash_name("draftdon"):
+                        executed = eosio::execute_action(eosio::name(receiver), eosio::name(code), &donations::draftdon);
                         break;
-                    case eosio::hash_name("action2"):
-                        executed = eosio::execute_action(eosio::name(receiver), eosio::name(code), &donations::action2);
-                        break;
+                        // case eosio::hash_name("signdon"):
+                        //     executed = eosio::execute_action(eosio::name(receiver), eosio::name(code), &donations::signdon);
+                        //     break;
                 }
                 eosio::check(executed == true, "unknown action");
             }

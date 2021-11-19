@@ -13,12 +13,6 @@ donations::donations(name receiver, name code, datastream<const char*> ds) : con
     /* NOP */
 }
 
-void donations::action1()
-{
-    print("action1");
-}
-void donations::action2(const name& someone)
-{
-    require_auth(someone);
-    print("action2");
-}
+void donations::draftdon(const name& contractID) {}
+
+//void donations::signdon(const name& to, const asset& amount, const uint32_t& frequency) {}

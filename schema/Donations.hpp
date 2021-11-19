@@ -12,7 +12,7 @@ namespace system_epn
     using std::string;
     using std::vector;
 
-    struct Schema1
+    struct Donations
     {
         name to;
         uint32_t lastPayout;
@@ -20,5 +20,5 @@ namespace system_epn
 
         uint64_t primary_key() const { return to.value; }
     };
-    EOSIO_REFLECT(Schema1, to, lastPayout, memoSuffix);
+    EOSIO_REFLECT(Donations, to, lastPayout, memoSuffix);
 }  // namespace system_epn

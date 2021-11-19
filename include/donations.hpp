@@ -5,16 +5,16 @@
 #include <eosio/name.hpp>
 #include <string>
 
-#include "Schema1.hpp"
+#include "Donations.hpp"
 
 namespace system_epn
 {
     using std::string;
     using namespace eosio;
-    using system_epn::Schema1;
+    using system_epn::Donations;
 
-    extern const char* action1_ricardian;
-    extern const char* action2_ricardian;
+    extern const char* draftdon_ricardian;
+    extern const char* signdon_ricardian;
     extern const char* ricardian_clause2;
 
     class donations : public contract
@@ -24,10 +24,14 @@ namespace system_epn
 
         donations(name receiver, name code, datastream<const char*> ds);
 
-        void action1();
+        /*
+        */
+        void draftdon(const name& contractID);
+        // void deletedon(const name& contractID);
 
-        void action2(const name& someone);
+        // void signdon(const name& to, const asset& amount, const uint32_t& frequency);
+        // void unsigndon(const name& contractName, const name& drafterName);
 
-        using Schema1Table = eosio::multi_index<"schema1"_n, Schema1>;
+        using DonationsTable = eosio::multi_index<"donations"_n, Donations>;
     };
 }  // namespace system_epn
