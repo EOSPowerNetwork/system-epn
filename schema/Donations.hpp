@@ -12,13 +12,15 @@ namespace system_epn
     using std::string;
     using std::vector;
 
+    // This table is scoped to the owner, so owner does not need to be part of the table
     struct Donations
     {
-        name to;
-        uint32_t lastPayout;
+        name contractID;
         string memoSuffix;
 
-        uint64_t primary_key() const { return to.value; }
+        // Todo - where to store those who sign this contract?
+
+        uint64_t primary_key() const { return contractID.value; }
     };
-    EOSIO_REFLECT(Donations, to, lastPayout, memoSuffix);
+    EOSIO_REFLECT(Donations, contractID, memoSuffix);
 }  // namespace system_epn

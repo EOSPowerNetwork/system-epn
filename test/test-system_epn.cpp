@@ -5,8 +5,7 @@ using namespace system_epn::actions;
 
 constexpr auto testsuite_donations = "[Donations]";
 
-// Verify that a donation is able to be drafted
-TEST_CASE("Draft", testsuite_donations)
+TEST_CASE("1. Verify that a donation is able to be drafted", testsuite_donations)
 {
     test_chain t;
     setupChain(t);
@@ -16,8 +15,7 @@ TEST_CASE("Draft", testsuite_donations)
     expect(alice.trace<draftdon>(owner, "mydonation"_n), nullptr);
 }
 
-// Verify that the same owner can create two contracts with different contractIDs
-TEST_CASE("Draft 2 unique", testsuite_donations)
+TEST_CASE("2. Verify that the same owner can create two contracts with different contractIDs", testsuite_donations)
 {
     test_chain t;
     setupChain(t);
@@ -28,8 +26,7 @@ TEST_CASE("Draft 2 unique", testsuite_donations)
     expect(alice.trace<draftdon>(owner, "donation2"_n), nullptr);
 }
 
-// Verify that the same owner cannot create two contracts with the same contractID
-TEST_CASE("Draft 2 identical", testsuite_donations)
+TEST_CASE("3. Verify that the same owner cannot create two contracts with the same contractID", testsuite_donations)
 {
     test_chain t;
     setupChain(t);
@@ -40,8 +37,7 @@ TEST_CASE("Draft 2 identical", testsuite_donations)
     expect(alice.trace<draftdon>(owner, "mydonation"_n), error::doubleDraft.data());
 }
 
-// Verify that the owner must be a signer on the draft
-TEST_CASE("Draft wrong owner", testsuite_donations)
+TEST_CASE("4. Verify that the owner must be a signer on the draft", testsuite_donations)
 {
     test_chain t;
     setupChain(t);
@@ -51,8 +47,7 @@ TEST_CASE("Draft wrong owner", testsuite_donations)
     expect(alice.trace<draftdon>(owner, "mydonation"_n), error::wrongOwner.data());
 }
 
-// Verify that two different drafters can use the same contractID
-TEST_CASE("Same contract ID", testsuite_donations)
+TEST_CASE("5. Verify that two different drafters can use the same contractID", testsuite_donations)
 {
     test_chain t;
     setupChain(t);

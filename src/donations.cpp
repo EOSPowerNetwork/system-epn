@@ -16,7 +16,8 @@ donations::donations(name receiver, name code, datastream<const char*> ds) : con
 
 void donations::draftdon(const name& owner, const name& contractID)
 {
-    // Check if there is already a donation with this ID made by this caller
+    DonationsTable _donations(get_self(), owner.value);
+    // Todo: Check if there is already a donation with this ID made by this caller
 }
 
 //void donations::signdon(const name& to, const asset& amount, const uint32_t& frequency) {}
