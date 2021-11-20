@@ -8,6 +8,7 @@
 | memoSuffix | eosio::name | Unique ID of this donation contract in this scope |
 
 * Example:
+
 | contractID  | memoSuffix |
 | -----------  | ----------- |
 | myDonation  | "Thanks, from MyCompany!"
