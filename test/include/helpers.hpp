@@ -65,3 +65,9 @@ std::pair<test_chain::user_context, test_chain::user_context> get2Acc(test_chain
 {
     return {t.as("alice"_n), t.as("bob"_n)};
 }
+
+void setupChain(test_chain& t)
+{
+    setup_installMyContract(t);
+    setup_createAccounts(t);
+}

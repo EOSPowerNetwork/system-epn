@@ -1,3 +1,4 @@
+#include <eosio/action.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/name.hpp>
 #include <string>
@@ -13,6 +14,9 @@ donations::donations(name receiver, name code, datastream<const char*> ds) : con
     /* NOP */
 }
 
-void donations::draftdon(const name& contractID) {}
+void donations::draftdon(const name& owner, const name& contractID)
+{
+    // Check if there is already a donation with this ID made by this caller
+}
 
 //void donations::signdon(const name& to, const asset& amount, const uint32_t& frequency) {}

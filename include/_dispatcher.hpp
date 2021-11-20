@@ -24,7 +24,7 @@ namespace system_epn
             f("sayhi"_h, eosio::action_type_wrapper<&contract_c1::sayhi>{}, sayhi_ricardian);
             f("sayhialice"_h, eosio::action_type_wrapper<&contract_c1::sayhialice>{}, sayhialice_ricardian, "someone");
 
-            f("draftdon"_h, eosio::action_type_wrapper<&contract_c2::draftdon>{}, draftdon_ricardian, "contractID");
+            f("draftdon"_h, eosio::action_type_wrapper<&contract_c2::draftdon>{}, draftdon_ricardian, "owner", "contractID");
             //f("signdon"_h, eosio::action_type_wrapper<&contract_c2::signdon>{}, signdon_ricardian, "to", "amount", "frequency");
         }
 
