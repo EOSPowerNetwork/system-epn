@@ -20,6 +20,7 @@ namespace fixedProps
         // If they were to grow after an org/signer established their memos, the total size may exceed the 256 byte memo limit
         static_assert(memoDelimiter.size() == delimiterBytes);
         static_assert(marketingMemo.size() == marketingMemoBytes);
+        static_assert(memoDelimiter.size() + marketingMemo.size() + 2 * memoSize == totalMemoBytes);
     }  // namespace memo
 
 };  // namespace fixedProps
