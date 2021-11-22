@@ -4,6 +4,7 @@
 #include <string>
 
 #include "donations.hpp"
+#include "errormessages.hpp"
 
 using namespace eosio;
 using std::string;
@@ -16,8 +17,15 @@ donations::donations(name receiver, name code, datastream<const char*> ds) : con
 
 void donations::draftdon(const name& owner, const name& contractID)
 {
+    require_auth(owner);
+
     DonationsTable _donations(get_self(), owner.value);
-    // Todo: Check if there is already a donation with this ID made by this caller
+    check(_donations.find(owner.value) == _donations.end(), error::wrongOwner.data());
+
+    _donations.emplace(owner, [&](auto& row) {
+        row.contractID = contractID;
+        row.memoSuffix = "";
+    });
 }
 
 //void donations::signdon(const name& to, const asset& amount, const uint32_t& frequency) {}
