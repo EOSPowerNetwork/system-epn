@@ -12,4 +12,5 @@ The EOS Power Network uses test-driven development (TDD) via the CLSDK as a stan
 3. Verify that the same owner cannot create two contracts with the same contractID
 4. Verify that the owner must be a signer on the draft
 5. Verify that two different drafters can use the same contractID
+6. Verify that the memo suffix cannot exceed fixedProps::memoSize
 

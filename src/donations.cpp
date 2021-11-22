@@ -5,6 +5,7 @@
 
 #include "donations.hpp"
 #include "errormessages.hpp"
+#include "fixedprops.hpp"
 
 using namespace eosio;
 using std::string;
@@ -15,7 +16,7 @@ donations::donations(name receiver, name code, datastream<const char*> ds) : con
     /* NOP */
 }
 
-void donations::draftdon(const name& owner, const name& contractID)
+void donations::draftdon(const name& owner, const name& contractID, const std::string& memoSuffix)
 {
     require_auth(owner);
 
