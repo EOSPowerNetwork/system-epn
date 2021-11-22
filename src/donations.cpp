@@ -16,7 +16,7 @@ donations::donations(name receiver, name code, datastream<const char*> ds) : con
     /* NOP */
 }
 
-void donations::draftdon(const name& owner, const name& contractID, const std::string& memoSuffix)
+void donations::draftdon(const name& owner, const name& contractID, const std::string& memoSuffix, const bool drafterPaysSignerRAM)
 {
     require_auth(owner);
 
@@ -28,6 +28,7 @@ void donations::draftdon(const name& owner, const name& contractID, const std::s
     _donations.emplace(owner, [&](auto& row) {
         row.contractID = contractID;
         row.memoSuffix = memoSuffix;
+        row.drafterPaysSignerRAM = drafterPaysSignerRAM;
     });
 }
 
