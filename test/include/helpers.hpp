@@ -14,6 +14,11 @@ void setup_installMyContract(test_chain& t)
     t.set_code(system_epn::contract_account, "system_epn.wasm");
 }
 
+void setup_configureMyConract(test_chain& t)
+{
+    // Todo - Configure the EPN to handle EOS tokens
+}
+
 // Setup function to add some accounts to the chain
 void setup_createAccounts(test_chain& t)
 {
@@ -69,5 +74,6 @@ std::pair<test_chain::user_context, test_chain::user_context> get2Acc(test_chain
 void setupChain(test_chain& t)
 {
     setup_installMyContract(t);
+    setup_configureMyConract(t);
     setup_createAccounts(t);
 }
