@@ -109,15 +109,15 @@ TEST_CASE("7. Verify that a donation can be signed & state is accurate", testsui
     asset quantity = s2a("1.0000 EOS");
     uint32_t frequency = 60 * 60 * 23;  // 23 hours
     string signerMemo = "Signer memo";
-    // expect(bob.trace<signdon>(alice, contractID, quantity, frequency, signerMemo), nullptr);
+    expect(bob.trace<signdon>("bob"_n, owner, contractID, quantity, frequency, signerMemo), nullptr);
 
-    // system_epn::donations::DonationsTable state(system_epn::contract_account, owner.value);
-    // auto iter = state.require_find(contractID.value);
-    // check(iter->signerData.size() == 1, "Signer data not saved");
-    // auto signerData = iter->signerData.at(0);
-    // check(signerData.frequency == frequency, "Donation frequency not stored correctly");
-    // check(signerData.quantity == quantity, "Donation quantity not stored correctly");
-    // check(signerData.signerMemo == signerMemo, "Signer memo not stored correctly");
+    system_epn::donations::DonationsTable state(system_epn::contract_account, owner.value);
+    auto iter = state.require_find(contractID.value);
+    check(iter->signerData.size() == 1, "Signer data not saved");
+    auto signerData = iter->signerData.at(0);
+    check(signerData.frequency == frequency, "Donation frequency not stored correctly");
+    check(signerData.quantity == quantity, "Donation quantity not stored correctly");
+    check(signerData.signerMemo == signerMemo, "Signer memo not stored correctly");
 }
 
 TEST_CASE("8. Verify that the RAM payer matches the payer specified by the drafter", testsuite_donations)

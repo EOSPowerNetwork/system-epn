@@ -32,4 +32,10 @@ void donations::draftdon(const name& owner, const name& contractID, const std::s
     });
 }
 
+void donations::signdon(const name& signer, const name& owner, const name& contractID, const asset& quantity, const uint32_t& frequency, const string& signerMemo)
+{
+    // Todo
+    // require_auth(signer);
+}
+
 //void donations::signdon(const name& to, const asset& amount, const uint32_t& frequency) {}

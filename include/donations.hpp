@@ -24,10 +24,10 @@ namespace system_epn
 
         donations(name receiver, name code, datastream<const char*> ds);
 
-        void draftdon(const name& owner, const name& contractID, const std::string& memoSuffix, const bool drafterPaysSignerRAM);
-        // void deletedon(const name& contractID);
+        void draftdon(const name& owner, const name& contractID, const string& memoSuffix, const bool drafterPaysSignerRAM);
+        void signdon(const name& signer, const name& owner, const name& contractID, const asset& quantity, const uint32_t& frequency, const string& signerMemo);
 
-        // void signdon(const name& to, const asset& amount, const uint32_t& frequency);
+        // void deletedon(const name& contractID);
         // void unsigndon(const name& contractName, const name& drafterName);
 
         using DonationsTable = eosio::multi_index<"donations"_n, Donations>;
