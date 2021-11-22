@@ -20,7 +20,7 @@ void donations::draftdon(const name& owner, const name& contractID)
     require_auth(owner);
 
     DonationsTable _donations(get_self(), owner.value);
-    check(_donations.find(owner.value) == _donations.end(), error::wrongOwner.data());
+    check(_donations.find(contractID.value) == _donations.end(), error::doubleDraft.data());
 
     _donations.emplace(owner, [&](auto& row) {
         row.contractID = contractID;

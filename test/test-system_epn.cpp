@@ -34,7 +34,7 @@ TEST_CASE("3. Verify that the same owner cannot create two contracts with the sa
 
     auto owner = "alice"_n;
     expect(alice.trace<draftdon>(owner, "mydonation"_n), nullptr);
-    t.start_block(4000);
+    t.start_block(1000);
     expect(alice.trace<draftdon>(owner, "mydonation"_n), error::doubleDraft.data());
 }
 
