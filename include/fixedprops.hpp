@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string_view>
 
 // Do not modify once contract is live
