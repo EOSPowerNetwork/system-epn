@@ -6,3 +6,5 @@ IndentWidth: '4'
 NamespaceIndentation: All
 ReflowComments: false
 ConstructorInitializerAllOnOneLineOrOnePerLine: 'false'
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: WithoutElse

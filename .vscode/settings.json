@@ -98,7 +98,9 @@
         "rope": "cpp",
         "slist": "cpp",
         "cfenv": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "__memory": "cpp",
+        "filesystem": "cpp"
     },
     "clang-tidy.buildPath": "build",
     "clang-tidy.compilerArgsBefore":
