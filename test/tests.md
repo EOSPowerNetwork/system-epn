@@ -10,7 +10,8 @@ Specifically, [BDD-style testing](http://dannorth.net/introducing-bdd/) is used 
 ### Data Type Tests
 * Given a valid memo, a Memo object can be constructed
 * Given an invalid memo, a Memo object cannot be constructed
-* TODO: Verify that only frequencies in the accepted range (min/max) can be used
+* Given a valid Frequency, a Frequency object can be constructed
+* Given an invalid Frequency, a Frequency object cannot be constructed
 
 ### Action(s): DraftDon
 * Scenario 1: A single drafter using the \"draftdon\" action
