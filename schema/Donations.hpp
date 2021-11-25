@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "Memo.hpp"
+
 namespace system_epn
 {
     using eosio::asset;
@@ -26,7 +28,7 @@ namespace system_epn
     struct Donations
     {
         name contractID;
-        string memoSuffix;
+        Memo memoSuffix;
         bool drafterPaysSignerRAM;
         std::vector<SignerData> signerData;
 

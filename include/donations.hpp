@@ -22,14 +22,28 @@ namespace system_epn
        public:
         using contract::contract;
 
-        donations(name receiver, name code, datastream<const char*> ds);
-
-        void draftdon(const name& owner, const name& contractID, const string& memoSuffix, const bool drafterPaysSignerRAM);
-        void signdon(const name& signer, const name& owner, const name& contractID, const asset& quantity, const uint32_t& frequency, const string& signerMemo);
+        void draftdon(const name& owner, const name& contractID, const Memo& memoSuffix, const bool drafterPaysSignerRAM);
+        void signdon(const name& signer, const name& owner, const name& contractID, const asset& quantity, const uint32_t& frequency, const Memo& signerMemo);
 
         // void deletedon(const name& contractID);
         // void unsigndon(const name& contractName, const name& drafterName);
+        using MIType = eosio::multi_index<"donations"_n, Donations>;
+        class DonationsTable : public MIType
+        {
+           public:
+            DonationsTable(name code, uint64_t scope) : MIType(code, scope) {}
+            void draft(const name& contractID, const Memo& memoSuffix, const bool drafterPaysSignerRAM)
+            {
+                check(find(contractID.value) == end(), error::doubleDraft.data());
 
-        using DonationsTable = eosio::multi_index<"donations"_n, Donations>;
+                auto ram_payer = eosio::name(get_scope());
+                emplace(ram_payer, [&](auto& row) {
+                    row.contractID = contractID;
+                    row.memoSuffix = memoSuffix;
+                    row.drafterPaysSignerRAM = drafterPaysSignerRAM;
+                });
+            }
+        };
     };
+
 }  // namespace system_epn
