@@ -10,10 +10,12 @@
 #include <catch2/catch.hpp>
 
 using namespace system_epn::actions;
+using namespace TestData;
 using system_epn::Frequency;
 using system_epn::Memo;
 
 using eosio::asset;
+using eosio::symbol_code;
 using std::string;
 using std::string_view;
 using std::vector;
@@ -88,7 +90,6 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations)
 
             auto trace = alice.trace<draftdon>(owner, contractID, memo, drafterPaysSignerRAM);
             expect(trace, nullptr);
-            printRamDeltas(trace);
 
             THEN("The donation contract should exist")
             {
@@ -98,7 +99,6 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations)
                 REQUIRE(donationIter->contractID == contractID);                      // "ContractID not saved properly"
                 REQUIRE(donationIter->memoSuffix == memo);                            // "Memo not saved properly"
                 REQUIRE(donationIter->drafterPaysSignerRAM == drafterPaysSignerRAM);  // "drafterPaysSignerRAM not saved properly"
-                REQUIRE(std::empty(donationIter->signerData));                        // "Spurious signer data"
             }
 
             THEN("Alice is the only one whose RAM is consumed")
@@ -166,44 +166,137 @@ SCENARIO("2. Two drafters using the draftdon action", testsuite_donations)
     }
 }
 
-/*
-* TODO Scenario 1: A single signer using the "signdon" action to sign a single donation draft
-  * Given a chain in which Alice drafted a donation
-    * Then the donation should have zero signers
-    * Then Alice cannot sign her own donation
-    * Then Bob cannot sign Alice's donation with an unaccepted currency
-    * Then Bob can sign Alice's donation
-      * And then the donation should have exactly one signer
-      * And then the RAM payer specified by the donation draft should be charged the RAM costs
-        * Also only the expected amount of RAM is consumed
-    * When Bob signs Alice's donation
-      * Then Bob cannot sign Alice's donation again
-      * Then the first donation goes out immediately
-        * And then the second donation goes out correctly
-*/
+SCENARIO("3. A single signer using the \"signdon\" action to sign a single donation draft", testsuite_donations)
+{
+    GIVEN("A chain in which Alice drafted a donation, with signer paying additonial RAM cost")
+    {
+        test_chain t;
+        setupChain(t);
+        setup_EOS_token(t);
 
-// TEST_CASE("7. Verify that a donation can be signed & state is accurate", testsuite_donations)
-// {
-//     test_chain t;
-//     setupChain(t);
-//     auto [alice, bob] = get2Acc(t);
+        auto [alice, bob] = get2Acc(t);
+        auto code = system_epn::contract_account;
+        auto owner = "alice"_n;
+        auto contractID = "donation1"_n;
+        bool drafterPaysSignerRAM = false;
+        asset initialFunds = s2a("1000.0000 EOS");
+        Memo drafterMemo{"Memo"};
+        Memo signerMemo{"Signer memo"};
 
-//     // Write transaction
-//     auto owner = "alice"_n;
-//     auto contractID = "mydonation"_n;
-//     string drafterMemo = "Drafter memo";
-//     expect(alice.trace<draftdon>(owner, contractID, drafterMemo, false), nullptr);
+        alice.act<draftdon>(owner, contractID, drafterMemo, drafterPaysSignerRAM);
 
-//     asset quantity = s2a("1.0000 EOS");
-//     uint32_t frequency = 60 * 60 * 23;  // 23 hours
-//     string signerMemo = "Signer memo";
-//     expect(bob.trace<signdon>("bob"_n, owner, contractID, quantity, frequency, signerMemo), nullptr);
+        AND_GIVEN("Alice and Bob each have 1,000 EOS")
+        {
+            setup_fundUser(t, "alice"_n, initialFunds);
+            setup_fundUser(t, "bob"_n, initialFunds);
 
-//     system_epn::donations::DonationsTable state(system_epn::contract_account, owner.value);
-//     auto iter = state.require_find(contractID.value);
-//     check(iter->signerData.size() == 1, "Signer data not saved");
-//     auto signerData = iter->signerData.at(0);
-//     check(signerData.frequency == frequency, "Donation frequency not stored correctly");
-//     check(signerData.quantity == quantity, "Donation quantity not stored correctly");
-//     check(signerData.signerMemo == signerMemo, "Signer memo not stored correctly");
-// }
+            THEN("The donation should have zero signers")
+            {
+                system_epn::donations::DonationsTable state(code, owner.value);
+                auto donationIter = state.find(contractID.value);
+                REQUIRE(donationIter != state.end());           // "Donation not saved to state"
+                REQUIRE(std::empty(donationIter->signerData));  // "Spurious signer data"
+            }
+
+            THEN("Alice cannot sign her own donation")
+            {
+                asset q{s2a("1.0000 EOS")};
+                auto t = alice.trace<signdon>("alice"_n, owner, contractID, q, freq_23Hours, signerMemo);
+                CHECK(failedWith(t, error::invalidSigner));
+            }
+
+            THEN("Bob cannot sign Alice's donation with an invalid currency")
+            {
+                // Todo - wrap asset with EPNAsset, and this test can be covered by a data type test
+                asset q{s2a("1.0000 FAKE")};
+                auto t = bob.trace<signdon>("bob"_n, owner, contractID, q, freq_23Hours, signerMemo);
+                CHECK(failedWith(t, error::invalidCurrency));
+            }
+
+            THEN("Bob can sign Alice's donation")
+            {
+                asset q{s2a("1.0000 EOS")};
+                name signer = "bob"_n;
+                auto t = bob.trace<signdon>(signer, owner, contractID, q, freq_23Hours, signerMemo);
+                CHECK(succeeded(t));
+            }
+
+            WHEN("Bob signs Alice's donation")
+            {
+                asset donationAmount{s2a("1.0000 EOS")};
+                name signer = "bob"_n;
+                auto trace = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, signerMemo);
+
+                THEN("The donation should have exactly one signer")
+                {
+                    system_epn::donations::DonationsTable state(code, owner.value);
+                    auto donationIter = state.find(contractID.value);
+                    REQUIRE(donationIter != state.end());           // "Donation not saved to state"
+                    REQUIRE(donationIter->signerData.size() == 1);  // "Spurious signer data"
+                }
+
+                THEN("The signer should be charged the additional RAM cost")
+                {
+                    const vector<action_trace>& actions = trace.action_traces;
+                    check(actions.size() == 1, "More than one action? This should never happen.");
+                    const auto& ramDeltas = actions.at(0).account_ram_deltas;
+                    REQUIRE(ramDeltas.size() == 1);
+
+                    const auto& delta = ramDeltas.at(0);
+                    REQUIRE(delta.account == signer);
+                }
+
+                THEN("Only the expected amount of RAM is consumed")
+                {
+                    const vector<action_trace>& actions = trace.action_traces;
+                    const auto& ramDeltas = actions.at(0).account_ram_deltas;
+                    const auto& delta = ramDeltas.at(0);
+                    constexpr int64_t DraftDonRamConsumption = 239;
+                    REQUIRE(delta.delta == DraftDonRamConsumption);
+                }
+
+                THEN("Bob cannot sign Alice's donation again")
+                {
+                    auto trace2 = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, signerMemo);
+                    CHECK(failedWith(trace2, error::duplicateSigner));
+                }
+
+                THEN("Bob should have [donationAmount] less EOS")
+                {
+                    auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
+                    CHECK(initialFunds - amount == donationAmount);
+                }
+
+                THEN("Alice should have [donationAmount] more EOS")
+                {
+                    auto amount = token::contract::get_balance("eosio.token"_n, "alice"_n, symbol_code({"EOS"}));
+                    CHECK(amount - initialFunds == donationAmount);
+                }
+
+                WHEN("Less time has passed than the frequency")
+                {
+                    uint32_t frequencyInBlocks = freq_23Hours.value * 2;  // Seconds to blocks, 500ms block time
+                    uint32_t notEnoughBlocks = frequencyInBlocks - 1;
+                    t.start_block(notEnoughBlocks);
+                    THEN("Bob has still only made one donation")
+                    {
+                        auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
+                        CHECK(initialFunds - amount == donationAmount);
+                    }
+                }
+
+                WHEN("Enough time has passed for one additional donation")
+                {
+                    uint32_t frequencyInBlocks = freq_23Hours.value * 2;  // Seconds to blocks, 500ms block time
+                    t.start_block(frequencyInBlocks);
+                    THEN("Bob has made one more donation")
+                    {
+                        auto totalDonated = 2 * donationAmount;
+                        auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
+                        CHECK(initialFunds - amount == totalDonated);
+                    }
+                }
+            }
+        }
+    }
+}

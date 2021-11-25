@@ -9,4 +9,7 @@ namespace error
     constexpr string_view missingAuth = "Missing required authority";
     constexpr string_view memoTooLong = "Memo too long";
     constexpr string_view frequencyOutOfRange = "Frequency out of range";
+    constexpr string_view invalidSigner = "Signer not valid for ths contract";
+    constexpr string_view invalidCurrency = "Token type not currently supported";
+    constexpr string_view duplicateSigner = "Signer cannot sign twice";
 }  // namespace error

@@ -7,6 +7,11 @@
 using namespace eosio;
 using std::vector;
 
+namespace TestData
+{
+    system_epn::Frequency freq_23Hours{23 * 60 * 60};
+}
+
 // Setup function to install my contract to the chain
 void setup_installMyContract(test_chain& t)
 {
@@ -56,9 +61,13 @@ void setup_fundUsers(test_chain& t)
     for (auto user : {"alice"_n, "bob"_n, "jane"_n, "joe"_n})
     {
         t.as("eosio"_n).act<token::actions::transfer>("eosio"_n, user, s2a("10000.0000 EOS"), "");
-        t.as("eosio"_n).act<token::actions::transfer>("eosio"_n, user, s2a("10000.0000 OTHER"), "");
         t.as("hacker.token"_n).with_code("hacker.token"_n).act<token::actions::transfer>("hacker.token"_n, user, s2a("10000.0000 EOS"), "");
     }
+}
+
+void setup_fundUser(test_chain& t, eosio::name user, eosio::asset amount)
+{
+    t.as("eosio"_n).act<token::actions::transfer>("eosio"_n, user, amount, "");
 }
 
 test_chain::user_context getAcc(test_chain& t)
