@@ -19,7 +19,7 @@ void donations::draftdon(const name& owner, const name& contractID, const Memo& 
     _donations.draft(contractID, memoSuffix, drafterPaysSignerRAM);
 }
 
-void donations::signdon(const name& signer, const name& owner, const name& contractID, const asset& quantity, const uint32_t& frequency, const Memo& signerMemo)
+void donations::signdon(const name& signer, const name& owner, const name& contractID, const asset& quantity, const Frequency& frequency, const Memo& signerMemo)
 {
     // Todo
 }

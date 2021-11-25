@@ -25,4 +25,10 @@ namespace fixedProps
         static_assert(memoDelimiter.size() + marketingMemo.size() + 2 * memoSize == totalMemoBytes);
     }  // namespace memo
 
+    namespace Frequency
+    {
+        constexpr uint32_t minimum_frequency_seconds = 23 * 60 * 60;        // 23 hours
+        constexpr uint32_t maximum_frequency_seconds = 365 * 24 * 60 * 60;  // One year
+    }                                                                       // namespace Frequency
+
 };  // namespace fixedProps

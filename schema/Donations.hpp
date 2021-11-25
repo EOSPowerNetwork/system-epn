@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "Frequency.hpp"
 #include "Memo.hpp"
 
 namespace system_epn
@@ -19,7 +20,7 @@ namespace system_epn
     struct SignerData
     {
         asset quantity;
-        uint32_t frequency;
+        Frequency frequency;
         string signerMemo;
     };
     EOSIO_REFLECT(SignerData, quantity, frequency, signerMemo);
@@ -32,7 +33,10 @@ namespace system_epn
         bool drafterPaysSignerRAM;
         std::vector<SignerData> signerData;
 
-        uint64_t primary_key() const { return contractID.value; }
+        uint64_t primary_key() const
+        {
+            return contractID.value;
+        }
     };
     EOSIO_REFLECT(Donations, contractID, memoSuffix, drafterPaysSignerRAM, signerData);
 }  // namespace system_epn

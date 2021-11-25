@@ -10,6 +10,7 @@
 #include <catch2/catch.hpp>
 
 using namespace system_epn::actions;
+using system_epn::Frequency;
 using system_epn::Memo;
 
 using eosio::asset;
@@ -38,6 +39,26 @@ SCENARIO("0. Data type tests:", testsuite_donations)
         THEN("A Memo object cannot be constructed")
         {
             REQUIRE(Memo::validate(failing_memo) == false);
+        }
+    }
+
+    GIVEN("A valid frequency")
+    {
+        constexpr uint32_t validFrequency = fixedProps::Frequency::minimum_frequency_seconds;
+        THEN("A Frequency object can be constructed")
+        {
+            REQUIRE(Frequency::validate(validFrequency) == true);
+        }
+    }
+
+    GIVEN("An invalid frequency")
+    {
+        constexpr uint32_t invalidFrequency1 = fixedProps::Frequency::minimum_frequency_seconds - 1;
+        constexpr uint32_t invalidFrequency2 = fixedProps::Frequency::maximum_frequency_seconds + 1;
+        THEN("A Frequency object cannot be constructed")
+        {
+            REQUIRE(Frequency::validate(invalidFrequency1) == false);
+            REQUIRE(Frequency::validate(invalidFrequency2) == false);
         }
     }
 }

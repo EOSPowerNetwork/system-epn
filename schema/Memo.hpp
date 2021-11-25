@@ -18,7 +18,7 @@ namespace system_epn
         Memo() = default;
         Memo(string memo)
         {
-            check(memo.size() <= fixedProps::memo::memoSize, error::memoTooLong.data());
+            check(validate(memo), error::memoTooLong.data());
             value = memo;
         }
 

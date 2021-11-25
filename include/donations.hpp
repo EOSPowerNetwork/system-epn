@@ -23,7 +23,7 @@ namespace system_epn
         using contract::contract;
 
         void draftdon(const name& owner, const name& contractID, const Memo& memoSuffix, const bool drafterPaysSignerRAM);
-        void signdon(const name& signer, const name& owner, const name& contractID, const asset& quantity, const uint32_t& frequency, const Memo& signerMemo);
+        void signdon(const name& signer, const name& owner, const name& contractID, const asset& quantity, const Frequency& frequency, const Memo& signerMemo);
 
         // void deletedon(const name& contractID);
         // void unsigndon(const name& contractName, const name& drafterName);
