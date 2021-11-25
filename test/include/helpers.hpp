@@ -1,11 +1,11 @@
 #include <eosio/tester.hpp>
+#include <string_view>
 #include <token/token.hpp>
+#include <vector>
 #include "_dispatcher.hpp"
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
-
 using namespace eosio;
+using std::vector;
 
 // Setup function to install my contract to the chain
 void setup_installMyContract(test_chain& t)
@@ -76,4 +76,34 @@ void setupChain(test_chain& t)
     setup_installMyContract(t);
     setup_configureMyConract(t);
     setup_createAccounts(t);
+}
+
+void printRamDeltas(const transaction_trace& trace)
+{
+    const vector<action_trace>& actions = trace.action_traces;
+    if (actions.size() == 1)
+    {
+        const auto& ramDeltas = actions.at(0).account_ram_deltas;
+        if (ramDeltas.size() > 0)
+        {
+            cout << "\n\n"
+                 << "RAM Deltas:"
+                 << "\n";
+            for (const auto& delta : ramDeltas)
+            {
+                cout << "Account: " << delta.account << ", Delta: " << delta.delta << "\n";
+            }
+            cout << "\n";
+        }
+    }
+}
+
+bool succeeded(const transaction_trace& trace)
+{
+    return (trace.status == transaction_status::executed);
+}
+
+bool failedWith(const transaction_trace& trace, std::string_view err)
+{
+    return (trace.except->find(err.data()) != std::string::npos);
 }

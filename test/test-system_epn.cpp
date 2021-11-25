@@ -1,124 +1,175 @@
 #include <eosio/asset.hpp>
 
+#include <iostream>
+#include <vector>
 #include "errormessages.hpp"
 #include "fixedprops.hpp"
 #include "include/helpers.hpp"
 
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
+
 using namespace system_epn::actions;
+using system_epn::Memo;
+
 using eosio::asset;
 using std::string;
 using std::string_view;
+using std::vector;
 
+///////////////////////////////////////////////////////////////////////////////////////
 constexpr auto testsuite_donations = "[Donations]";
-TEST_CASE("1. Verify that a donation is able to be drafted & state is accurate", testsuite_donations)
+SCENARIO("0. Data type tests:", testsuite_donations)
 {
-    test_chain t;
-    setupChain(t);
-    auto alice = getAcc(t);
+    GIVEN("A valid memo")
+    {
+        constexpr string_view passing_memo = "VeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongMemo";
+        static_assert(passing_memo.size() == fixedProps::memo::memoSize);
+        THEN("A Memo object can be constructed")
+        {
+            REQUIRE(Memo::validate(passing_memo) == true);
+        }
+    }
 
-    // Write transaction
-    auto owner = "alice"_n;
-    auto contractID = "mydonation"_n;
-    string memo = "Memo";
-    bool drafterPaysSignerRAM = false;
-
-    expect(alice.trace<draftdon>(owner, contractID, memo, drafterPaysSignerRAM), nullptr);
-
-    system_epn::donations::DonationsTable state(system_epn::contract_account, owner.value);
-    auto donationIter = state.find(contractID.value);
-    check(donationIter != state.end(), "Donation not saved to state");
-    check(donationIter->contractID == contractID, "ContractID not saved properly");
-    check(donationIter->memoSuffix == memo, "Memo not saved properly");
-    check(donationIter->drafterPaysSignerRAM == drafterPaysSignerRAM, "drafterPaysSignerRAM not saved properly");
-    check(donationIter->signerData.size() == 0, "Spurious signer data");
+    GIVEN("An invalid memo")
+    {
+        constexpr string_view failing_memo = "AVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongMemo";
+        static_assert(failing_memo.size() == fixedProps::memo::memoSize + 1);
+        THEN("A Memo object cannot be constructed")
+        {
+            REQUIRE(Memo::validate(failing_memo) == false);
+        }
+    }
 }
 
-TEST_CASE("2. Verify that the same owner can create two contracts with different contractIDs", testsuite_donations)
+SCENARIO("1. A single drafter using the draftdon action", testsuite_donations)
 {
-    test_chain t;
-    setupChain(t);
-    auto alice = getAcc(t);
+    GIVEN("An initial empty chain setup")
+    {
+        test_chain t;
+        setupChain(t);
+        auto alice{getAcc(t)};
+        auto code = system_epn::contract_account;
+        auto owner = "alice"_n;
+        auto contractID = "donation1"_n;
 
-    auto owner = "alice"_n;
-    expect(alice.trace<draftdon>(owner, "donation1"_n, "Memo", false), nullptr);
-    expect(alice.trace<draftdon>(owner, "donation2"_n, "Memo", false), nullptr);
+        THEN("Alice's donation should not exist")
+        {
+            system_epn::donations::DonationsTable state(code, owner.value);
+            auto donationIter = state.find(contractID.value);
+            REQUIRE(donationIter == state.end());
+        }
+
+        WHEN("Alice creates a donation")
+        {
+            Memo memo{"Memo"};
+            bool drafterPaysSignerRAM = false;
+
+            auto trace = alice.trace<draftdon>(owner, contractID, memo, drafterPaysSignerRAM);
+            expect(trace, nullptr);
+            printRamDeltas(trace);
+
+            THEN("The donation contract should exist")
+            {
+                system_epn::donations::DonationsTable state(code, owner.value);
+                auto donationIter = state.find(contractID.value);
+                REQUIRE(donationIter != state.end());                                 // "Donation not saved to state"
+                REQUIRE(donationIter->contractID == contractID);                      // "ContractID not saved properly"
+                REQUIRE(donationIter->memoSuffix == memo);                            // "Memo not saved properly"
+                REQUIRE(donationIter->drafterPaysSignerRAM == drafterPaysSignerRAM);  // "drafterPaysSignerRAM not saved properly"
+                REQUIRE(std::empty(donationIter->signerData));                        // "Spurious signer data"
+            }
+
+            THEN("Alice is the only one whose RAM is consumed")
+            {
+                const vector<action_trace>& actions = trace.action_traces;
+                check(actions.size() == 1, "More than one action? This should never happen.");
+                const auto& ramDeltas = actions.at(0).account_ram_deltas;
+                REQUIRE(ramDeltas.size() == 1);
+
+                const auto& delta = ramDeltas.at(0);
+                REQUIRE(delta.account == "alice"_n);
+
+                AND_THEN("Alice should have consumed the expected amount of RAM")
+                {
+                    constexpr int64_t DraftDonRamConsumption = 239;
+                    REQUIRE(delta.delta == DraftDonRamConsumption);
+                }
+            }
+
+            THEN("A second donation may be created using a different name")
+            {
+                auto trace2 = alice.trace<draftdon>(owner, "donation2"_n, "Memo", false);
+                CHECK(succeeded(trace2));
+            }
+
+            THEN("A second donation with the same name cannot be created")
+            {
+                t.start_block(1000);
+                auto trace3 = alice.trace<draftdon>(owner, contractID, "Memo", false);
+                CHECK(failedWith(trace3, error::doubleDraft));
+            }
+        }
+    }
 }
 
-TEST_CASE("3. Verify that the same owner cannot create two contracts with the same contractID", testsuite_donations)
+SCENARIO("2. Two drafters using the draftdon action", testsuite_donations)
 {
-    test_chain t;
-    setupChain(t);
-    auto alice = getAcc(t);
+    GIVEN("An initial empty chain setup")
+    {
+        test_chain t;
+        setupChain(t);
 
-    auto owner = "alice"_n;
-    expect(alice.trace<draftdon>(owner, "mydonation"_n, "Memo", false), nullptr);
-    t.start_block(1000);
-    expect(alice.trace<draftdon>(owner, "mydonation"_n, "Memo", false), error::doubleDraft.data());
+        AND_GIVEN("Two different potential drafters, Alice and Bob")
+        {
+            auto [alice, bob] = get2Acc(t);
+
+            THEN("Alice cannot create a donation for Bob without his authorization")
+            {
+                auto trace = alice.trace<draftdon>("bob"_n, "mydonation"_n, "Memo", false);
+                REQUIRE(failedWith(trace, error::missingAuth));
+            }
+
+            WHEN("Alice creates a donation")
+            {
+                name aliceContractName = "adonation"_n;
+                alice.act<draftdon>("alice"_n, aliceContractName, "Memo", false);
+
+                THEN("Bob can also create a contract with the same name")
+                {
+                    auto trace = bob.trace<draftdon>("bob"_n, aliceContractName, "Memo", false);
+                    REQUIRE(succeeded(trace));
+                }
+            }
+        }
+    }
 }
 
-TEST_CASE("4. Verify that the owner must be a signer on the draft", testsuite_donations)
-{
-    test_chain t;
-    setupChain(t);
-    auto alice = getAcc(t);
+// TEST_CASE("7. Verify that a donation can be signed & state is accurate", testsuite_donations)
+// {
+//     test_chain t;
+//     setupChain(t);
+//     auto [alice, bob] = get2Acc(t);
 
-    auto owner = "bob"_n;
-    expect(alice.trace<draftdon>(owner, "mydonation"_n, "Memo", false), error::wrongOwner.data());
-}
+//     // Write transaction
+//     auto owner = "alice"_n;
+//     auto contractID = "mydonation"_n;
+//     string drafterMemo = "Drafter memo";
+//     expect(alice.trace<draftdon>(owner, contractID, drafterMemo, false), nullptr);
 
-TEST_CASE("5. Verify that two different drafters can use the same contractID", testsuite_donations)
-{
-    test_chain t;
-    setupChain(t);
-    auto [alice, bob] = get2Acc(t);
+//     asset quantity = s2a("1.0000 EOS");
+//     uint32_t frequency = 60 * 60 * 23;  // 23 hours
+//     string signerMemo = "Signer memo";
+//     expect(bob.trace<signdon>("bob"_n, owner, contractID, quantity, frequency, signerMemo), nullptr);
 
-    // Contract IDs must only be unique under the same owner
-    expect(alice.trace<draftdon>("alice"_n, "mydonation"_n, "Memo", false), nullptr);
-    expect(bob.trace<draftdon>("bob"_n, "mydonation"_n, "Memo", false), nullptr);
-}
-
-TEST_CASE("6. Verify that the drafter memo cannot exceed fixedProps::memoSize", testsuite_donations)
-{
-    test_chain t;
-    setupChain(t);
-    auto alice = getAcc(t);
-
-    auto owner = "alice"_n;
-    constexpr string_view passing_memo = "VeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongMemo";
-    static_assert(passing_memo.size() == fixedProps::memo::memoSize);
-
-    constexpr string_view failing_memo = "AVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongMemo";
-    static_assert(failing_memo.size() == fixedProps::memo::memoSize + 1);
-
-    expect(alice.trace<draftdon>(owner, "mydonation"_n, passing_memo, false), nullptr);
-    expect(alice.trace<draftdon>(owner, "mydonation2"_n, failing_memo, false), error::memoTooLong.data());
-}
-
-TEST_CASE("7. Verify that a donation can be signed & state is accurate", testsuite_donations)
-{
-    test_chain t;
-    setupChain(t);
-    auto [alice, bob] = get2Acc(t);
-
-    // Write transaction
-    auto owner = "alice"_n;
-    auto contractID = "mydonation"_n;
-    string drafterMemo = "Drafter memo";
-    expect(alice.trace<draftdon>(owner, contractID, drafterMemo, false), nullptr);
-
-    asset quantity = s2a("1.0000 EOS");
-    uint32_t frequency = 60 * 60 * 23;  // 23 hours
-    string signerMemo = "Signer memo";
-    expect(bob.trace<signdon>("bob"_n, owner, contractID, quantity, frequency, signerMemo), nullptr);
-
-    system_epn::donations::DonationsTable state(system_epn::contract_account, owner.value);
-    auto iter = state.require_find(contractID.value);
-    check(iter->signerData.size() == 1, "Signer data not saved");
-    auto signerData = iter->signerData.at(0);
-    check(signerData.frequency == frequency, "Donation frequency not stored correctly");
-    check(signerData.quantity == quantity, "Donation quantity not stored correctly");
-    check(signerData.signerMemo == signerMemo, "Signer memo not stored correctly");
-}
+//     system_epn::donations::DonationsTable state(system_epn::contract_account, owner.value);
+//     auto iter = state.require_find(contractID.value);
+//     check(iter->signerData.size() == 1, "Signer data not saved");
+//     auto signerData = iter->signerData.at(0);
+//     check(signerData.frequency == frequency, "Donation frequency not stored correctly");
+//     check(signerData.quantity == quantity, "Donation quantity not stored correctly");
+//     check(signerData.signerMemo == signerMemo, "Signer memo not stored correctly");
+// }
 
 TEST_CASE("8. Verify that the RAM payer matches the payer specified by the drafter", testsuite_donations)
 {
