@@ -10,7 +10,7 @@
 
 namespace system_epn
 {
-    static constexpr auto contract_account = "contractacc"_n;
+    static constexpr auto contract_account = "system.epn"_n;
 
     namespace actions
     {
