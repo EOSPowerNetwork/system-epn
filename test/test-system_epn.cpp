@@ -166,6 +166,22 @@ SCENARIO("2. Two drafters using the draftdon action", testsuite_donations)
     }
 }
 
+/*
+* TODO Scenario 1: A single signer using the "signdon" action to sign a single donation draft
+  * Given a chain in which Alice drafted a donation
+    * Then the donation should have zero signers
+    * Then Alice cannot sign her own donation
+    * Then Bob cannot sign Alice's donation with an unaccepted currency
+    * Then Bob can sign Alice's donation
+      * And then the donation should have exactly one signer
+      * And then the RAM payer specified by the donation draft should be charged the RAM costs
+        * Also only the expected amount of RAM is consumed
+    * When Bob signs Alice's donation
+      * Then Bob cannot sign Alice's donation again
+      * Then the first donation goes out immediately
+        * And then the second donation goes out correctly
+*/
+
 // TEST_CASE("7. Verify that a donation can be signed & state is accurate", testsuite_donations)
 // {
 //     test_chain t;
@@ -191,58 +207,3 @@ SCENARIO("2. Two drafters using the draftdon action", testsuite_donations)
 //     check(signerData.quantity == quantity, "Donation quantity not stored correctly");
 //     check(signerData.signerMemo == signerMemo, "Signer memo not stored correctly");
 // }
-
-TEST_CASE("8. Verify that the RAM payer matches the payer specified by the drafter", testsuite_donations)
-{
-    // Todo
-}
-
-TEST_CASE("9. Verify that the signer has authorized the sign action", testsuite_donations)
-{
-    // Todo
-}
-
-TEST_CASE("10. Verify that the donation being signed actually exists", testsuite_donations)
-{
-    // Todo
-}
-
-TEST_CASE("11. Verify that the signer cannot sign the same donation twice", testsuite_donations)
-{
-    // Todo
-}
-
-TEST_CASE("12. Verify that drafter cannot sign their own donation", testsuite_donations)
-{
-    // Todo
-}
-
-TEST_CASE("13. Verify that multiple unique signers may sign a donation", testsuite_donations)
-{
-    // Todo
-}
-
-TEST_CASE("14. Verify that only the accepted token symbols can be used to donate", testsuite_donations)
-{
-    // Todo
-}
-
-TEST_CASE("15. Verify that only frequencies in the accepted range (min/max) can be used", testsuite_donations)
-{
-    // Todo
-}
-
-TEST_CASE("16. Veriify that the signer memo cannot exceed fixedProps::memoSize", testsuite_donations)
-{
-    // Todo
-}
-
-TEST_CASE("17. Verify that the first donation goes out immediately", testsuite_donations)
-{
-    // Todo
-}
-
-TEST_CASE("18. Verify that the second donation goes out correctly", testsuite_donations)
-{
-    // Todo
-}
