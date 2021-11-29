@@ -1,4 +1,4 @@
-# All cmake projects need these
+# All cmake projects need this
 cmake_minimum_required(VERSION 3.16)
 
 ###################################################################
@@ -59,6 +59,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Libraries for building contracts and tests
 find_package(clsdk REQUIRED)
 
+# Set output directory
+set(ARTIFACTS_DIR "artifacts")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${ARTIFACTS_DIR})
+# set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+# set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
 # Builds main ${PROJ}.wasm contract
 # Contracts may link to either:
 #   * eosio-contract-simple-malloc: This library builds contracts with
@@ -96,7 +102,7 @@ add_executable(${ABIGEN_PROJ} ${DISPATCHERFILE} ${RICARDIANLIST})
 target_include_directories(${ABIGEN_PROJ} PRIVATE ${INCLUDE_DIRS})
 target_link_libraries(${ABIGEN_PROJ} eosio-contract-abigen)
 add_custom_command(TARGET ${ABIGEN_PROJ} POST_BUILD
-     COMMAND cltester ${ABIGEN_PROJ}.wasm >${PROJ}.abi
+     COMMAND cltester ${ARTIFACTS_DIR}/${ABIGEN_PROJ}.wasm > ${ARTIFACTS_DIR}/${PROJ}.abi
  )
 
 # Builds test-${PROJ}.wasm
