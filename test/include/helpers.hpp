@@ -16,7 +16,7 @@ namespace TestData
 void setup_installMyContract(test_chain& t)
 {
     t.create_code_account(system_epn::contract_account);
-    t.set_code(system_epn::contract_account, "system_epn.wasm");
+    t.set_code(system_epn::contract_account, "artifacts/system_epn.wasm");
 }
 
 void setup_configureMyConract(test_chain& t)
