@@ -62,8 +62,6 @@ find_package(clsdk REQUIRED)
 # Set output directory
 set(ARTIFACTS_DIR "artifacts")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${ARTIFACTS_DIR})
-# set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-# set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # Builds main ${PROJ}.wasm contract
 # Contracts may link to either:
