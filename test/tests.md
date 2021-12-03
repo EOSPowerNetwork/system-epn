@@ -29,7 +29,6 @@
   * Given a chain in which Alice drafted a donation, with signer paying additonial RAM cost
     * Then the donation should have zero signers
     * Then Alice cannot sign her own donation
-    * Then Bob cannot sign Alice's donation with an invalid currency
     * Then Bob can sign Alice's donation
       * And then the donation should have exactly one signer
       * And then the signer should be charged the additional RAM cost

@@ -1,3 +1,3 @@
 # Design
 
-Documents in the design section are intended to add some context to the design decisions made in the code.
+Documents in ths section are intended to describe some of the tradeoffs embedded in the design of the EOS Power Network, and their rationale.
