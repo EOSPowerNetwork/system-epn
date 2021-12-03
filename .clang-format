@@ -1,6 +1,5 @@
 ---
 BasedOnStyle: Chromium
-BreakBeforeBraces: Allman
 ColumnLimit: '180'
 IndentWidth: '4'
 NamespaceIndentation: All
@@ -8,3 +7,7 @@ ReflowComments: false
 ConstructorInitializerAllOnOneLineOrOnePerLine: 'false'
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: WithoutElse
+BreakBeforeBraces: Stroustrup
+BreakConstructorInitializers: 'BeforeComma'
+BreakBeforeBinaryOperators: All
+BreakBeforeTernaryOperators: true
