@@ -1,3 +1,5 @@
+#pragma once
+
 #include <eosio/tester.hpp>
 #include <string_view>
 #include <token/token.hpp>
@@ -7,8 +9,7 @@
 using namespace eosio;
 using std::vector;
 
-namespace TestData
-{
+namespace testData {
     system_epn::Frequency freq_23Hours{23 * 60 * 60};
 }
 
@@ -19,16 +20,10 @@ void setup_installMyContract(test_chain& t)
     t.set_code(system_epn::contract_account, "artifacts/system_epn.wasm");
 }
 
-void setup_configureMyConract(test_chain& t)
-{
-    // Todo - Configure the EPN to handle EOS tokens
-}
-
 // Setup function to add some accounts to the chain
 void setup_createAccounts(test_chain& t)
 {
-    for (auto user : {"alice"_n, "bob"_n, "charlie"_n, "dan"_n})
-    {
+    for (auto user : {"alice"_n, "bob"_n, "charlie"_n, "dan"_n}) {
         t.create_account(user);
     }
 }
@@ -58,8 +53,7 @@ void setup_hacker_EOS_token(test_chain& t)
 // Sample setup function to fund some users
 void setup_fundUsers(test_chain& t)
 {
-    for (auto user : {"alice"_n, "bob"_n, "jane"_n, "joe"_n})
-    {
+    for (auto user : {"alice"_n, "bob"_n, "jane"_n, "joe"_n}) {
         t.as("eosio"_n).act<token::actions::transfer>("eosio"_n, user, s2a("10000.0000 EOS"), "");
         t.as("hacker.token"_n).with_code("hacker.token"_n).act<token::actions::transfer>("hacker.token"_n, user, s2a("10000.0000 EOS"), "");
     }
@@ -83,28 +77,42 @@ std::pair<test_chain::user_context, test_chain::user_context> get2Acc(test_chain
 void setupChain(test_chain& t)
 {
     setup_installMyContract(t);
-    setup_configureMyConract(t);
     setup_createAccounts(t);
+}
+
+vector<ship_protocol::account_delta> getFirstRamDeltaSummary(const transaction_trace& trace)
+{
+    const vector<action_trace>& actions = trace.action_traces;
+    check(actions.size() != 0, "Can't return a ram delta for a trace with no actions!");
+
+    return actions.at(0).account_ram_deltas;
+}
+
+int64_t getRamDelta(const ship_protocol::account_delta& account_delta, const name& n)
+{
+    check(account_delta.account == n, "Wrong account");
+    return account_delta.delta;
 }
 
 void printRamDeltas(const transaction_trace& trace)
 {
     const vector<action_trace>& actions = trace.action_traces;
-    if (actions.size() == 1)
-    {
-        const auto& ramDeltas = actions.at(0).account_ram_deltas;
-        if (ramDeltas.size() > 0)
-        {
-            cout << "\n\n"
-                 << "RAM Deltas:"
-                 << "\n";
-            for (const auto& delta : ramDeltas)
-            {
-                cout << "Account: " << delta.account << ", Delta: " << delta.delta << "\n";
-            }
-            cout << "\n";
+    cout << "\n";
+    for (size_t i = 0; i < actions.size(); ++i) {
+        const auto& action = actions[i];
+        const auto& ramDeltas = action.account_ram_deltas;
+        cout << "\nAction " << i << ":\n";
+        for (const auto& ramDelta : ramDeltas) {
+            cout << "RAM Deltas:\n";
+            cout << "Account: " << ramDelta.account << ", Delta: " << ramDelta.delta << "\n";
         }
+        cout << "\n";
     }
+}
+
+void dprint(std::string s)
+{
+    printf("\n%s\n", s.c_str());
 }
 
 bool succeeded(const transaction_trace& trace)
@@ -115,4 +123,13 @@ bool succeeded(const transaction_trace& trace)
 bool failedWith(const transaction_trace& trace, std::string_view err)
 {
     return (trace.except->find(err.data()) != std::string::npos);
+}
+
+void dump_donations(const name& scope)
+{
+    printf("\n ========= %s Donations ========= \n", scope.to_string().c_str());
+    system_epn::DonationsTable state(system_epn::contract_account, scope.value);
+    for (auto& row : state) {
+        printf("%-12s %-12s\n\n\n", row.contractID.to_string().c_str(), std::to_string(row.signerData.size()).c_str());
+    }
 }

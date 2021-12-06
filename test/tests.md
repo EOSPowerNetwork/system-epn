@@ -34,6 +34,8 @@
       * And then the signer should be charged the additional RAM cost
         * Also only the expected amount of RAM is consumed
     * When Bob signs Alice's donation
+      * Then the donation should have exactly one signer
+      * Then the expected amount of RAM is released and consumed
       * Then Bob cannot sign Alice's donation again
       * Then Bob should have \[donationAmount\] less EOS
       * Then Alice should have \[donationAmount\] more EOS

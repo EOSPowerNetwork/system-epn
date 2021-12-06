@@ -5,12 +5,16 @@
 #include "errormessages.hpp"
 #include "fixedprops.hpp"
 #include "include/helpers.hpp"
+#include "include/ramconsumption.hpp"
 
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
 using namespace system_epn::actions;
-using namespace TestData;
+using namespace system_epn;
+using namespace testData;
+using system_epn::Asset;
+using system_epn::DonationsTable;
 using system_epn::Frequency;
 using system_epn::Memo;
 
@@ -30,7 +34,7 @@ SCENARIO("0. Data type tests:", testsuite_donations)
         static_assert(passing_memo.size() == fixedProps::memo::memoSize);
         THEN("A Memo object can be constructed")
         {
-            REQUIRE(Memo::validate(passing_memo) == true);
+            CHECK(Memo::validate(passing_memo) == true);
         }
     }
 
@@ -40,7 +44,7 @@ SCENARIO("0. Data type tests:", testsuite_donations)
         static_assert(failing_memo.size() == fixedProps::memo::memoSize + 1);
         THEN("A Memo object cannot be constructed")
         {
-            REQUIRE(Memo::validate(failing_memo) == false);
+            CHECK(Memo::validate(failing_memo) == false);
         }
     }
 
@@ -49,7 +53,7 @@ SCENARIO("0. Data type tests:", testsuite_donations)
         constexpr uint32_t validFrequency = fixedProps::Frequency::minimum_frequency_seconds;
         THEN("A Frequency object can be constructed")
         {
-            REQUIRE(Frequency::validate(validFrequency) == true);
+            CHECK(Frequency::validate(validFrequency) == true);
         }
     }
 
@@ -59,8 +63,79 @@ SCENARIO("0. Data type tests:", testsuite_donations)
         constexpr uint32_t invalidFrequency2 = fixedProps::Frequency::maximum_frequency_seconds + 1;
         THEN("A Frequency object cannot be constructed")
         {
-            REQUIRE(Frequency::validate(invalidFrequency1) == false);
-            REQUIRE(Frequency::validate(invalidFrequency2) == false);
+            CHECK(Frequency::validate(invalidFrequency1) == false);
+            CHECK(Frequency::validate(invalidFrequency2) == false);
+        }
+    }
+
+    GIVEN("An invalid test asset type")
+    {
+        asset invalidAsset(s2a("100.0000 HAX"));
+        check(!fixedProps::Assets::getAssetProps(invalidAsset.symbol.code()), "Asset type must not be supported");
+
+        THEN("An Asset object cannot be constructed")
+        {
+            CHECK(Asset::validate(invalidAsset) == false);
+        }
+    }
+
+    GIVEN("A supported asset type with an out of range (over maximum) quantity")
+    {
+        eosio::symbol validSymbol("EOS", 4);
+        auto props = fixedProps::Assets::getAssetProps(validSymbol.code());
+        check(static_cast<bool>(props), "Asset type must be supported");
+
+        auto max = props.value().maximum;
+        int64_t invalidAmount = max + 1;
+        check(invalidAmount > max, "Amount must be greater than maximum");
+
+        asset invalidAsset(invalidAmount, validSymbol);
+
+        THEN("An Asset object cannot be constructed")
+        {
+            CHECK(Asset::validate(invalidAsset) == false);
+        }
+    }
+
+    GIVEN("A supported asset type with an out of range (under minimum) quantity")
+    {
+        eosio::symbol validSymbol("EOS", 4);
+        auto props = fixedProps::Assets::getAssetProps(validSymbol.code());
+        check(static_cast<bool>(props), "Asset type must be supported");
+
+        auto min = props.value().minimum;
+        int64_t invalidAmount = min - 1;
+        check(invalidAmount < min, "Amount must be less than minimum");
+
+        asset invalidAsset(invalidAmount, validSymbol);
+
+        THEN("An Asset object cannot be constructed")
+        {
+            CHECK(Asset::validate(invalidAsset) == false);
+        }
+    }
+
+    GIVEN("A supported asset type with a quantity in range")
+    {
+        eosio::symbol validSymbol("EOS", 4);
+        auto props = fixedProps::Assets::getAssetProps(validSymbol.code());
+        check(static_cast<bool>(props), "Asset type must be supported");
+
+        auto min = props.value().minimum;
+        auto max = props.value().maximum;
+        auto validAmount1 = min;
+        auto validAmount2 = max;
+
+        check(validAmount1 >= min && validAmount1 <= max, "Amount must be within valid range");
+        check(validAmount2 >= min && validAmount2 <= max, "Amount must be within valid range");
+
+        asset validAsset1(validAmount1, validSymbol);
+        asset validAsset2(validAmount2, validSymbol);
+
+        THEN("An Asset object may be constructed")
+        {
+            CHECK(Asset::validate(validAsset1) == true);
+            CHECK(Asset::validate(validAsset2) == true);
         }
     }
 }
@@ -78,27 +153,25 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations)
 
         THEN("Alice's donation should not exist")
         {
-            system_epn::donations::DonationsTable state(code, owner.value);
+            DonationsTable state(code, owner.value);
             auto donationIter = state.find(contractID.value);
-            REQUIRE(donationIter == state.end());
+            CHECK(donationIter == state.end());
         }
 
         WHEN("Alice creates a donation")
         {
             Memo memo{"Memo"};
-            bool drafterPaysSignerRAM = false;
 
-            auto trace = alice.trace<draftdon>(owner, contractID, memo, drafterPaysSignerRAM);
+            auto trace = alice.trace<draftdon>(owner, contractID, memo);
             expect(trace, nullptr);
 
             THEN("The donation contract should exist")
             {
-                system_epn::donations::DonationsTable state(code, owner.value);
+                DonationsTable state(code, owner.value);
                 auto donationIter = state.find(contractID.value);
-                REQUIRE(donationIter != state.end());                                 // "Donation not saved to state"
-                REQUIRE(donationIter->contractID == contractID);                      // "ContractID not saved properly"
-                REQUIRE(donationIter->memoSuffix == memo);                            // "Memo not saved properly"
-                REQUIRE(donationIter->drafterPaysSignerRAM == drafterPaysSignerRAM);  // "drafterPaysSignerRAM not saved properly"
+                CHECK(donationIter != state.end());             // "Donation not saved to state"
+                CHECK(donationIter->contractID == contractID);  // "ContractID not saved properly"
+                CHECK(donationIter->memoSuffix == memo);        // "Memo not saved properly"
             }
 
             THEN("Alice is the only one whose RAM is consumed")
@@ -106,28 +179,33 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations)
                 const vector<action_trace>& actions = trace.action_traces;
                 check(actions.size() == 1, "More than one action? This should never happen.");
                 const auto& ramDeltas = actions.at(0).account_ram_deltas;
-                REQUIRE(ramDeltas.size() == 1);
+                CHECK(ramDeltas.size() == 1);
 
                 const auto& delta = ramDeltas.at(0);
-                REQUIRE(delta.account == "alice"_n);
+                CHECK(delta.account == "alice"_n);
 
-                AND_THEN("Alice should have consumed the expected amount of RAM")
+                AND_THEN("Alice should have consumed the expected amount of RAM for first emplace")
                 {
-                    constexpr int64_t DraftDonRamConsumption = 239;
-                    REQUIRE(delta.delta == DraftDonRamConsumption);
+                    CHECK(delta.delta == ramConsumption_bytes::firstEmplace::DraftDonation);
                 }
             }
 
             THEN("A second donation may be created using a different name")
             {
-                auto trace2 = alice.trace<draftdon>(owner, "donation2"_n, "Memo", false);
+                auto trace2 = alice.trace<draftdon>(owner, "donation2"_n, "Memo");
                 CHECK(succeeded(trace2));
+
+                AND_THEN("Alice should have consumed the expected amount of RAM for subsequent emplace")
+                {
+                    const auto ramdelta = trace2.action_traces[0].account_ram_deltas[0];
+                    CHECK(ramdelta.delta == ramConsumption_bytes::subsequentEmplace::DraftDonation);
+                }
             }
 
             THEN("A second donation with the same name cannot be created")
             {
                 t.start_block(1000);
-                auto trace3 = alice.trace<draftdon>(owner, contractID, "Memo", false);
+                auto trace3 = alice.trace<draftdon>(owner, contractID, "Memo");
                 CHECK(failedWith(trace3, error::doubleDraft));
             }
         }
@@ -147,19 +225,19 @@ SCENARIO("2. Two drafters using the draftdon action", testsuite_donations)
 
             THEN("Alice cannot create a donation for Bob without his authorization")
             {
-                auto trace = alice.trace<draftdon>("bob"_n, "mydonation"_n, "Memo", false);
-                REQUIRE(failedWith(trace, error::missingAuth));
+                auto trace = alice.trace<draftdon>("bob"_n, "mydonation"_n, "Memo");
+                CHECK(failedWith(trace, error::missingAuth));
             }
 
             WHEN("Alice creates a donation")
             {
                 name aliceContractName = "adonation"_n;
-                alice.act<draftdon>("alice"_n, aliceContractName, "Memo", false);
+                alice.act<draftdon>("alice"_n, aliceContractName, "Memo");
 
                 THEN("Bob can also create a contract with the same name")
                 {
-                    auto trace = bob.trace<draftdon>("bob"_n, aliceContractName, "Memo", false);
-                    REQUIRE(succeeded(trace));
+                    auto trace = bob.trace<draftdon>("bob"_n, aliceContractName, "Memo");
+                    CHECK(succeeded(trace));
                 }
             }
         }
@@ -178,12 +256,11 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
         auto code = system_epn::contract_account;
         auto owner = "alice"_n;
         auto contractID = "donation1"_n;
-        bool drafterPaysSignerRAM = false;
         asset initialFunds = s2a("1000.0000 EOS");
         Memo drafterMemo{"Memo"};
         Memo signerMemo{"Signer memo"};
 
-        alice.act<draftdon>(owner, contractID, drafterMemo, drafterPaysSignerRAM);
+        alice.act<draftdon>(owner, contractID, drafterMemo);
 
         AND_GIVEN("Alice and Bob each have 1,000 EOS")
         {
@@ -192,10 +269,10 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
 
             THEN("The donation should have zero signers")
             {
-                system_epn::donations::DonationsTable state(code, owner.value);
+                DonationsTable state(code, owner.value);
                 auto donationIter = state.find(contractID.value);
-                REQUIRE(donationIter != state.end());           // "Donation not saved to state"
-                REQUIRE(std::empty(donationIter->signerData));  // "Spurious signer data"
+                CHECK(donationIter != state.end());           // "Donation not saved to state"
+                CHECK(std::empty(donationIter->signerData));  // "Spurious signer data"
             }
 
             THEN("Alice cannot sign her own donation")
@@ -205,19 +282,12 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
                 CHECK(failedWith(t, error::invalidSigner));
             }
 
-            THEN("Bob cannot sign Alice's donation with an invalid currency")
-            {
-                // Todo - wrap asset with EPNAsset, and this test can be covered by a data type test
-                asset q{s2a("1.0000 FAKE")};
-                auto t = bob.trace<signdon>("bob"_n, owner, contractID, q, freq_23Hours, signerMemo);
-                CHECK(failedWith(t, error::invalidCurrency));
-            }
-
             THEN("Bob can sign Alice's donation")
             {
                 asset q{s2a("1.0000 EOS")};
                 name signer = "bob"_n;
-                auto t = bob.trace<signdon>(signer, owner, contractID, q, freq_23Hours, signerMemo);
+                name drafter = owner;
+                auto t = bob.trace<signdon>(signer, drafter, contractID, q, freq_23Hours, signerMemo);
                 CHECK(succeeded(t));
             }
 
@@ -229,35 +299,24 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
 
                 THEN("The donation should have exactly one signer")
                 {
-                    system_epn::donations::DonationsTable state(code, owner.value);
+                    DonationsTable state(code, owner.value);
                     auto donationIter = state.find(contractID.value);
-                    REQUIRE(donationIter != state.end());           // "Donation not saved to state"
-                    REQUIRE(donationIter->signerData.size() == 1);  // "Spurious signer data"
+                    CHECK(donationIter != state.end());           // "Donation not saved to state"
+                    CHECK(donationIter->signerData.size() == 1);  // "Spurious signer data"
                 }
 
-                THEN("The signer should be charged the additional RAM cost")
+                THEN("The expected amount of RAM is released and consumed")
                 {
-                    const vector<action_trace>& actions = trace.action_traces;
-                    check(actions.size() == 1, "More than one action? This should never happen.");
-                    const auto& ramDeltas = actions.at(0).account_ram_deltas;
-                    REQUIRE(ramDeltas.size() == 1);
-
-                    const auto& delta = ramDeltas.at(0);
-                    REQUIRE(delta.account == signer);
-                }
-
-                THEN("Only the expected amount of RAM is consumed")
-                {
-                    const vector<action_trace>& actions = trace.action_traces;
-                    const auto& ramDeltas = actions.at(0).account_ram_deltas;
-                    const auto& delta = ramDeltas.at(0);
-                    constexpr int64_t DraftDonRamConsumption = 239;
-                    REQUIRE(delta.delta == DraftDonRamConsumption);
+                    printRamDeltas(trace);
+                    auto ramDeltas = getFirstRamDeltaSummary(trace);
+                    CHECK(getRamDelta(ramDeltas[0], "alice"_n) == ramConsumption_bytes::modify::oldPayer::SignDonation);
+                    CHECK(getRamDelta(ramDeltas[1], "bob"_n) == ramConsumption_bytes::modify::newPayer::SignDonation);
                 }
 
                 THEN("Bob cannot sign Alice's donation again")
                 {
-                    auto trace2 = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, signerMemo);
+                    Memo anotherSignerMemo{"Let's subscribe again!"};
+                    auto trace2 = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, anotherSignerMemo);
                     CHECK(failedWith(trace2, error::duplicateSigner));
                 }
 
@@ -300,3 +359,5 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
         }
     }
 }
+
+// Also, I think I should write an EOS Power Network security guide, to include people in my security-related design decisions.

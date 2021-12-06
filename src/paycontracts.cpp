@@ -8,18 +8,13 @@ using namespace eosio;
 using std::string;
 using namespace system_epn;
 
-paycontracts::paycontracts(name receiver, name code, datastream<const char*> ds) : contract(receiver, code, ds)
+paycontracts::paycontracts(name receiver, name code, datastream<const char*> ds)
+    : contract(receiver, code, ds)
 {
     /* NOP */
 }
 
-void paycontracts::sayhi()
+void paycontracts::addasset(const symbol& type, const name& contract, const int64_t& minAmount, const int64_t& maxAmount)
 {
-    print("Hi");
-}
-
-void paycontracts::sayhialice(const name& someone)
-{
-    check(someone == "alice"_n, "You may only say hi to Alice!");
-    print("Hi, Alice!");
+    /* NOP */
 }

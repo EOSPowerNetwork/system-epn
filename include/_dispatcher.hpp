@@ -8,17 +8,14 @@
         executed = eosio::execute_action(eosio::name(receiver), eosio::name(code), &CLASS_NAME::ACTION_NAME); \
         break;
 
-namespace system_epn
-{
+namespace system_epn {
     static constexpr auto contract_account = "system.epn"_n;
 
-    namespace actions
-    {
+    namespace actions {
         using contract_c1 = paycontracts;
         using contract_c2 = donations;
 
-        using sayhi = eosio::action_wrapper<"sayhi"_h, &contract_c1::sayhi, contract_account>;
-        using sayhialice = eosio::action_wrapper<"sayhialice"_h, &contract_c1::sayhialice, contract_account>;
+        using addasset = eosio::action_wrapper<"addasset"_h, &contract_c1::addasset, contract_account>;
 
         using draftdon = eosio::action_wrapper<"draftdon"_h, &contract_c2::draftdon, contract_account>;
         using signdon = eosio::action_wrapper<"signdon"_h, &contract_c2::signdon, contract_account>;
@@ -26,22 +23,18 @@ namespace system_epn
         template <typename F>
         void for_each_action(F&& f)
         {
-            f("sayhi"_h, eosio::action_type_wrapper<&contract_c1::sayhi>{}, sayhi_ricardian);
-            f("sayhialice"_h, eosio::action_type_wrapper<&contract_c1::sayhialice>{}, sayhialice_ricardian, "someone");
+            f("addasset"_h, eosio::action_type_wrapper<&contract_c1::addasset>{}, addasset_ricardian, "type", "contract", "minAmount", "maxAmount");
 
-            f("draftdon"_h, eosio::action_type_wrapper<&contract_c2::draftdon>{}, draftdon_ricardian, "owner", "contractID", "memoSuffix", "drafterPaysSignerRAM");
-            f("signdon"_h, eosio::action_type_wrapper<&contract_c2::signdon>{}, signdon_ricardian, "signer", "owner", "contractID", "quantity", "frequency", "signerMemo");
+            f("draftdon"_h, eosio::action_type_wrapper<&contract_c2::draftdon>{}, draftdon_ricardian, "owner", "contractID", "memoSuffix");
+            f("signdon"_h, eosio::action_type_wrapper<&contract_c2::signdon>{}, signdon_ricardian, "signer", "drafter", "contractID", "quantity", "frequency", "signerMemo");
         }
 
         inline bool eosio_apply(uint64_t receiver, uint64_t code, uint64_t action)
         {
             bool executed = false;
-            if (code == receiver)
-            {
-                switch (action)
-                {
-                    EXEC_ACTION(paycontracts, sayhi)
-                    EXEC_ACTION(paycontracts, sayhialice)
+            if (code == receiver) {
+                switch (action) {
+                    EXEC_ACTION(paycontracts, addasset)
                     EXEC_ACTION(donations, draftdon)
                     EXEC_ACTION(donations, signdon)
                 }
