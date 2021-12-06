@@ -11,11 +11,9 @@ When drafting a payment contract, RAM is consumed to pay for the cost of storing
 In this case, it is reasonable to expect the drafter to cover all RAM costs. This cost helps prevent any spam payment contracts from being stored on-chain, as drafters will only submit and cover the costs for payment contracts whose value exceeds the cost of the resources to make it.
 
 ## Signing a payment contract
-When signing a payment contract, RAM is consumed to store all details associated with the signed payment contract beyond what was already stored by the draft action.
+When signing a payment contract, RAM is consumed to store all details associated with the signed payment contract beyond what was already stored by the draft action. For example, in the case of a donation, the draft is really only the contact ID and the portion of the memo specified by the drafter, and the rest of the details (amount of the donation, frequency, etc) are all specified during the sign action. The signer must pay to store all of these extra details in RAM.
 
-Depending on the type of payment contract, it may be reasonable to assume that either the drafter or the signer will cover the RAM cost for signing a payment contract. For example, in a subscription contract, the drafter is the organization offering a subscription product or service. In such a scenario, the organization may want to cover some or all of the transaction costs on behalf of the user to eliminate as much of the friction as possible in soliciting subscribers. However, in a donation contract, the drafter may be a non-profit with no expectation of returns and therefore no revenue with which to cover transactons. In this scenario, it would be reasonable to expect the signer to pay RAM costs.
-
-Therefore, both options ought to be possible. To achieve this, at the time a payment contract is drafted, the drafter may select whether any additional RAM requirements will be paid for by the signer or subsidized by the drafter.
+To ensure that the signer does not take over ownership of the RAM storage costs for the drafter data, signer data must be stored in a separate table, and must include a foreign key to map the signer data to the corresponding drafter data.
 
 ## Servicing a payment contract
 Although the action to service a payment contract is not a protected action and may be initiated by anyone, the EPN system smart contract may not service the payment contract if the conditions have not been met. However if the conditions have been met, then the EPN system smart contract will facilitate the execution of the terms of the payment contract. 
