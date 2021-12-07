@@ -1,6 +1,7 @@
 #pragma once
 #include <tuple>
 #include "donations.hpp"
+#include "fixedprops.hpp"
 #include "paycontracts.hpp"
 
 #define EXEC_ACTION(CLASS_NAME, ACTION_NAME)                                                                  \
@@ -9,11 +10,11 @@
         break;
 
 namespace system_epn {
-    static constexpr auto contract_account = "system.epn"_n;
 
     namespace actions {
         using contract_c1 = paycontracts;
         using contract_c2 = donations;
+        using fixedProps::contract_account;
 
         using addasset = eosio::action_wrapper<"addasset"_h, &contract_c1::addasset, contract_account>;
 

@@ -16,8 +16,8 @@ namespace testData {
 // Setup function to install my contract to the chain
 void setup_installMyContract(test_chain& t)
 {
-    t.create_code_account(system_epn::contract_account);
-    t.set_code(system_epn::contract_account, "artifacts/system_epn.wasm");
+    t.create_code_account(fixedProps::contract_account);
+    t.set_code(fixedProps::contract_account, "artifacts/system_epn.wasm");
 }
 
 // Setup function to add some accounts to the chain
@@ -128,7 +128,7 @@ bool failedWith(const transaction_trace& trace, std::string_view err)
 void dump_donations(const name& scope)
 {
     printf("\n ========= %s Donations ========= \n", scope.to_string().c_str());
-    system_epn::DonationsTable state(system_epn::contract_account, scope.value);
+    system_epn::DonationsTable state(fixedProps::contract_account, scope.value);
     for (auto& row : state) {
         printf("%-12s %-12s\n\n\n", row.contractID.to_string().c_str(), std::to_string(row.signerData.size()).c_str());
     }

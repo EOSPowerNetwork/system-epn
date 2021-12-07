@@ -8,9 +8,7 @@
 #include "Donations.hpp"
 
 namespace system_epn {
-    using std::string;
     using namespace eosio;
-    using system_epn::DonationsTable;
 
     extern const char* draftdon_ricardian;
     extern const char* signdon_ricardian;
@@ -25,9 +23,6 @@ namespace system_epn {
 
         // void deletedon(const name& contractID);
         // void unsigndon(const name& contractName, const name& drafterName);
-
-       private:
-        DonationsTable _getDonations(const name& owner);
     };
 
 }  // namespace system_epn

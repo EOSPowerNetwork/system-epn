@@ -11,9 +11,9 @@
 #include "fixedprops.hpp"
 
 using namespace eosio;
-using std::string;
 using namespace system_epn;
 using eosio::time_point_sec;
+using std::string;
 
 void donations::draftdon(const name& owner, const name& contractID, const Memo& memoSuffix)
 {
@@ -23,18 +23,11 @@ void donations::draftdon(const name& owner, const name& contractID, const Memo& 
     print("Current block time: ");
     //print(current_block_time());
 
-    auto _donations = _getDonations(owner);
-    _donations.draft(contractID, memoSuffix);
+    Donations().draft(owner, contractID, memoSuffix);
 }
 
 void donations::signdon(const name& signer, const name& drafter, const name& contractID, const Asset& quantity, const Frequency& frequency, const Memo& signerMemo)
 {
     require_auth(signer);
-    auto _donations = _getDonations(drafter);
-    _donations.sign(signer, contractID, quantity, frequency, signerMemo);
-}
-
-DonationsTable donations::_getDonations(const name& owner)
-{
-    return DonationsTable(get_self(), owner.value);
+    Donations().getDonation(drafter, contractID).sign(signer, quantity, frequency, signerMemo);
 }

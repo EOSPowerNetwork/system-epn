@@ -147,7 +147,7 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations)
         test_chain t;
         setupChain(t);
         auto alice{getAcc(t)};
-        auto code = system_epn::contract_account;
+        auto code = fixedProps::contract_account;
         auto owner = "alice"_n;
         auto contractID = "donation1"_n;
 
@@ -253,7 +253,7 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
         setup_EOS_token(t);
 
         auto [alice, bob] = get2Acc(t);
-        auto code = system_epn::contract_account;
+        auto code = fixedProps::contract_account;
         auto owner = "alice"_n;
         auto contractID = "donation1"_n;
         asset initialFunds = s2a("1000.0000 EOS");

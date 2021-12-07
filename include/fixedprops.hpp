@@ -7,6 +7,8 @@
 
 // Do not modify once contract is live
 namespace fixedProps {
+    static constexpr auto contract_account = "system.epn"_n;
+    
     namespace memo {
         using std::string_view;
 
