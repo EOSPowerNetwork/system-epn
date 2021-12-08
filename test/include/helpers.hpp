@@ -127,9 +127,23 @@ bool failedWith(const transaction_trace& trace, std::string_view err)
 
 void dump_donations(const name& scope)
 {
+    using namespace system_epn;
+    using std::for_each;
+    using std::to_string;
+
     printf("\n ========= %s Donations ========= \n", scope.to_string().c_str());
-    system_epn::DonationsTable state(fixedProps::contract_account, scope.value);
-    for (auto& row : state) {
-        printf("%-12s %-12s\n\n\n", row.contractID.to_string().c_str(), std::to_string(row.signerData.size()).c_str());
+    system_epn::DrafterMIType _drafts(fixedProps::contract_account, scope.value);
+
+    printf("%-12s %-12s %-12s\n", "CONTRACT ID", "SIGNER", "QUANTITY");
+    for (auto& row : _drafts) {
+        auto ID = row.contractID;
+        printf("%-12s", ID.to_string().c_str());
+        SignerMIType _signatures(fixedProps::contract_account, fixedProps::contract_account.value);
+        auto byContractID = _signatures.get_index<"bycontractid"_n>();
+        for_each(byContractID.lower_bound(ID.value), byContractID.upper_bound(ID.value), [&](const system_epn::SignerData& s) {
+            if (s.drafter == scope) {
+                printf("%-12s %-12s %-12s\n", " ", s.signer.to_string().c_str(), to_string(s.quantity.value.amount).c_str());
+            }
+        });
     }
 }

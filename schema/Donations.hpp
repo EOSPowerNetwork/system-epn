@@ -33,6 +33,11 @@ namespace system_epn {
             return signer.value;
         }
 
+        uint64_t get_secondary_2() const
+        {
+            return contractID.value;
+        }
+
         uint64_t index;
         name signer;
         name drafter;
@@ -43,7 +48,10 @@ namespace system_epn {
     };
     EOSIO_REFLECT(SignerData, signer, drafter, quantity, frequency, signerMemo);
     EOSIO_COMPARE(SignerData);
-    using SignerMIType = eosio::multi_index<"signers"_n, SignerData, indexed_by<"bysigner"_n, const_mem_fun<SignerData, uint64_t, &SignerData::get_secondary_1>>>;
+    using SignerMIType = eosio::multi_index<"signers"_n,
+                                            SignerData,
+                                            indexed_by<"bysigner"_n, const_mem_fun<SignerData, uint64_t, &SignerData::get_secondary_1>>,
+                                            indexed_by<"bycontractid"_n, const_mem_fun<SignerData, uint64_t, &SignerData::get_secondary_2>>>;
 
     struct DrafterData {
         // This table is scoped to the owner, so owner does not need to be part of the table

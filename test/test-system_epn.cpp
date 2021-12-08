@@ -14,9 +14,10 @@ using namespace system_epn::actions;
 using namespace system_epn;
 using namespace testData;
 using system_epn::Asset;
-using system_epn::DonationsTable;
+using system_epn::DrafterMIType;
 using system_epn::Frequency;
 using system_epn::Memo;
+using system_epn::SignerMIType;
 
 using eosio::asset;
 using eosio::symbol_code;
@@ -153,9 +154,9 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations)
 
         THEN("Alice's donation should not exist")
         {
-            DonationsTable state(code, owner.value);
-            auto donationIter = state.find(contractID.value);
-            CHECK(donationIter == state.end());
+            DrafterMIType _drafts(code, owner.value);
+            auto donationIter = _drafts.find(contractID.value);
+            CHECK(donationIter == _drafts.end());
         }
 
         WHEN("Alice creates a donation")
@@ -167,9 +168,9 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations)
 
             THEN("The donation contract should exist")
             {
-                DonationsTable state(code, owner.value);
-                auto donationIter = state.find(contractID.value);
-                CHECK(donationIter != state.end());             // "Donation not saved to state"
+                DrafterMIType _drafts(code, owner.value);
+                auto donationIter = _drafts.find(contractID.value);
+                CHECK(donationIter != _drafts.end());           // "Donation not saved to state"
                 CHECK(donationIter->contractID == contractID);  // "ContractID not saved properly"
                 CHECK(donationIter->memoSuffix == memo);        // "Memo not saved properly"
             }
@@ -269,10 +270,12 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
 
             THEN("The donation should have zero signers")
             {
-                DonationsTable state(code, owner.value);
-                auto donationIter = state.find(contractID.value);
-                CHECK(donationIter != state.end());           // "Donation not saved to state"
-                CHECK(std::empty(donationIter->signerData));  // "Spurious signer data"
+                SignerMIType _signatures(code, code.value);
+                auto s = _signatures.get_index<"bycontractid"_n>();
+                auto end = s.upper_bound(contractID.value);
+                auto contractItr = std::find_if(s.lower_bound(contractID.value), s.upper_bound(contractID.value), [&](const SignerData& row) { return (row.drafter == owner); });
+
+                CHECK(contractItr == end);  // It would onlt appear in the signature table if there was at least one signature
             }
 
             THEN("Alice cannot sign her own donation")
@@ -299,10 +302,11 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
 
                 THEN("The donation should have exactly one signer")
                 {
-                    DonationsTable state(code, owner.value);
-                    auto donationIter = state.find(contractID.value);
-                    CHECK(donationIter != state.end());           // "Donation not saved to state"
-                    CHECK(donationIter->signerData.size() == 1);  // "Spurious signer data"
+                    SignerMIType _signatures(code, code.value);
+                    auto s = _signatures.get_index<"bycontractid"_n>();
+                    auto distance = std::distance(s.lower_bound(contractID.value), s.upper_bound(contractID.value));
+
+                    CHECK(distance == 1);  // "Spurious signer data"
                 }
 
                 THEN("The expected amount of RAM is released and consumed")
