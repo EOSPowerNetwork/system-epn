@@ -46,7 +46,7 @@ namespace system_epn {
         Frequency frequency;
         Memo signerMemo;
     };
-    EOSIO_REFLECT(SignerData, signer, drafter, quantity, frequency, signerMemo);
+    EOSIO_REFLECT(SignerData, index, signer, drafter, contractID, quantity, frequency, signerMemo);
     EOSIO_COMPARE(SignerData);
     using SignerMIType = eosio::multi_index<"signers"_n,
                                             SignerData,
@@ -84,13 +84,11 @@ namespace system_epn {
             SignerMIType signatures(fixedProps::contract_account, fixedProps::contract_account.value);
 
             auto sigsBySigner = signatures.get_index<"bysigner"_n>();
-            auto feq = [&](const SignerData& row) { return row.contractID == contractID; };
+            auto feq = [&](const SignerData& row) { return row.contractID == contractID && row.drafter == drafter; };
             auto itr = find_if(sigsBySigner.lower_bound(signer.value), sigsBySigner.upper_bound(signer.value), feq);
             check(itr == sigsBySigner.upper_bound(signer.value), error::duplicateSigner.data());
 
             uint64_t index = static_cast<uint64_t>(distance(signatures.begin(), signatures.end()));
-            string sIndex = std::to_string(index);
-            printf("=================================== index: %s", sIndex.c_str());
             auto addSigner = [&](SignerData& row) {
                 row.index = index;
                 row.contractID = contractID;

@@ -299,6 +299,7 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
                 asset donationAmount{s2a("1.0000 EOS")};
                 name signer = "bob"_n;
                 auto trace = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, signerMemo);
+                expect(trace, nullptr);
 
                 THEN("The donation should have exactly one signer")
                 {
@@ -311,10 +312,10 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
 
                 THEN("The expected amount of RAM is released and consumed")
                 {
-                    printRamDeltas(trace);
                     auto ramDeltas = getFirstRamDeltaSummary(trace);
-                    CHECK(getRamDelta(ramDeltas[0], "alice"_n) == ramConsumption_bytes::modify::oldPayer::SignDonation);
-                    CHECK(getRamDelta(ramDeltas[1], "bob"_n) == ramConsumption_bytes::modify::newPayer::SignDonation);
+                    CHECK(ramDeltas.size() == 1);            // Only one account should have a ram delta
+                    CHECK(ramDeltas[0].account == "bob"_n);  // And it should be the signer, Bob
+                    CHECK(getRamDelta(ramDeltas[0], "bob"_n) == ramConsumption_bytes::firstEmplace::SignDonation);
                 }
 
                 THEN("Bob cannot sign Alice's donation again")

@@ -134,16 +134,17 @@ void dump_donations(const name& scope)
     printf("\n ========= %s Donations ========= \n", scope.to_string().c_str());
     system_epn::DrafterMIType _drafts(fixedProps::contract_account, scope.value);
 
-    printf("%-12s %-12s %-12s\n", "CONTRACT ID", "SIGNER", "QUANTITY");
+    printf("%-12s %-12s %-12s %-12s\n", "DRAFTER", "CONTRACT ID", "SIGNER", "QUANTITY");
     for (auto& row : _drafts) {
         auto ID = row.contractID;
-        printf("%-12s", ID.to_string().c_str());
+        printf("%-12s %-12s\n", ID.to_string().c_str(), scope.to_string().c_str());
         SignerMIType _signatures(fixedProps::contract_account, fixedProps::contract_account.value);
         auto byContractID = _signatures.get_index<"bycontractid"_n>();
         for_each(byContractID.lower_bound(ID.value), byContractID.upper_bound(ID.value), [&](const system_epn::SignerData& s) {
             if (s.drafter == scope) {
-                printf("%-12s %-12s %-12s\n", " ", s.signer.to_string().c_str(), to_string(s.quantity.value.amount).c_str());
+                printf("%-12s %-12s %-12s %-12s\n", " ", " ", s.signer.to_string().c_str(), to_string(s.quantity.value.amount).c_str());
             }
         });
+        printf("\n");
     }
 }
