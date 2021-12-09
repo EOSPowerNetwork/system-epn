@@ -26,17 +26,15 @@
 ## Action(s): SignDon
 
 * Scenario 1: A single signer using the "signdon" action to sign a single donation draft
-  * Given a chain in which Alice drafted a donation, with signer paying additonial RAM cost
+  * Given a chain in which Alice drafted a donation
     * Then the donation should have zero signers
     * Then Alice cannot sign her own donation
     * Then Bob can sign Alice's donation
-      * And then the donation should have exactly one signer
-      * And then the signer should be charged the additional RAM cost
-        * Also only the expected amount of RAM is consumed
     * When Bob signs Alice's donation
       * Then the donation should have exactly one signer
-      * Then the expected amount of RAM is released and consumed
+      * Then the signer consumes the expected amount of RAM
       * Then Bob cannot sign Alice's donation again
+      * Then the scheduled block to service the transaction should be correct
       * Then Bob should have \[donationAmount\] less EOS
       * Then Alice should have \[donationAmount\] more EOS
       * When less time has passed than the frequency

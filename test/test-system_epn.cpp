@@ -20,9 +20,11 @@ using system_epn::Memo;
 using system_epn::SignerMIType;
 
 using eosio::asset;
+using eosio::milliseconds;
 using eosio::symbol_code;
 using std::string;
 using std::string_view;
+using std::to_string;
 using std::vector;
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -247,7 +249,7 @@ SCENARIO("2. Two drafters using the draftdon action", testsuite_donations)
 
 SCENARIO("3. A single signer using the \"signdon\" action to sign a single donation draft", testsuite_donations)
 {
-    GIVEN("A chain in which Alice drafted a donation, with signer paying additonial RAM cost")
+    GIVEN("A chain in which Alice drafted a donation")
     {
         test_chain t;
         setupChain(t);
@@ -323,6 +325,29 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
                     Memo anotherSignerMemo{"Let's subscribe again!"};
                     auto trace2 = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, anotherSignerMemo);
                     CHECK(failedWith(trace2, error::duplicateSigner));
+                }
+
+                THEN("The scheduled block to service the transaction should be correct")
+                {
+                    /* Note: test_chain head block timestamp shows the timestamp of the last completed block, 
+                    current_block() in the contract shows the timestamp of the current (incomplete) block. */
+
+                    // Calculate expected service block timestamp
+                    int64_t blockTime = milliseconds(500).count();  // in microseconds
+                    int64_t lastProducedBlockTimestamp = t.get_head_block_info().timestamp.to_time_point().elapsed.count();
+                    int64_t activeBlockTimestamp = lastProducedBlockTimestamp + blockTime;
+                    int64_t serviceBlockTimestamp = activeBlockTimestamp + toMicroseconds(freq_23Hours);
+
+                    // Get what the contract calculated
+                    SignerMIType _signatures(code, code.value);
+                    auto s = _signatures.get_index<"bycontractid"_n>();
+                    auto end = s.upper_bound(contractID.value);
+                    auto itr = std::find_if(s.lower_bound(contractID.value), s.upper_bound(contractID.value), [&](const SignerData& row) { return (row.drafter == owner); });
+                    check(itr != end, "Contract doesn't exist? Should never happen.");
+                    int64_t contractServiceBlockTimestamp = itr->serviceBlock.to_time_point().elapsed.count();
+
+                    // Confirm they match
+                    CHECK(serviceBlockTimestamp == contractServiceBlockTimestamp);
                 }
 
                 THEN("Bob should have [donationAmount] less EOS")

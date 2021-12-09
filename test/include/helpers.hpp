@@ -8,9 +8,10 @@
 
 using namespace eosio;
 using std::vector;
+using system_epn::Frequency;
 
 namespace testData {
-    system_epn::Frequency freq_23Hours{23 * 60 * 60};
+    Frequency freq_23Hours{23 * 60 * 60};
 }
 
 // Setup function to install my contract to the chain
@@ -147,4 +148,10 @@ void dump_donations(const name& scope)
         });
         printf("\n");
     }
+}
+
+int64_t toMicroseconds(Frequency freq)
+{
+    constexpr int64_t umPerSecond = 1e6;
+    return static_cast<int64_t>(freq.value) * umPerSecond;
 }
