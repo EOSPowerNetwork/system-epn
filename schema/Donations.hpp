@@ -2,6 +2,7 @@
 
 #include <eosio/eosio.hpp>
 #include <eosio/name.hpp>
+#include <eosio/system.hpp>
 
 #include <string>
 #include <vector>
@@ -12,9 +13,12 @@
 #include "fixedprops.hpp"
 
 namespace system_epn {
+    using eosio::block_timestamp;
     using eosio::const_mem_fun;
+    using eosio::current_block_time;
     using eosio::indexed_by;
     using eosio::name;
+    using eosio::seconds;
     using std::distance;
     using std::find_if;
     using std::string;
@@ -38,20 +42,27 @@ namespace system_epn {
             return contractID.value;
         }
 
+        uint64_t get_secondary_3() const
+        {
+            return serviceBlock.to_time_point().elapsed.count();
+        }
+
         uint64_t index;
         name signer;
-        name drafter;
         name contractID;
+        block_timestamp serviceBlock;
+        name drafter;
         Asset quantity;
         Frequency frequency;
         Memo signerMemo;
     };
-    EOSIO_REFLECT(SignerData, index, signer, drafter, contractID, quantity, frequency, signerMemo);
+    EOSIO_REFLECT(SignerData, index, signer, contractID, serviceBlock, drafter, quantity, frequency, signerMemo);
     EOSIO_COMPARE(SignerData);
     using SignerMIType = eosio::multi_index<"signers"_n,
                                             SignerData,
                                             indexed_by<"bysigner"_n, const_mem_fun<SignerData, uint64_t, &SignerData::get_secondary_1>>,
-                                            indexed_by<"bycontractid"_n, const_mem_fun<SignerData, uint64_t, &SignerData::get_secondary_2>>>;
+                                            indexed_by<"bycontractid"_n, const_mem_fun<SignerData, uint64_t, &SignerData::get_secondary_2>>,
+                                            indexed_by<"byservblock"_n, const_mem_fun<SignerData, uint64_t, &SignerData::get_secondary_3>>>;
 
     struct DrafterData {
         // This table is scoped to the owner, so owner does not need to be part of the table
@@ -88,12 +99,17 @@ namespace system_epn {
             auto itr = find_if(sigsBySigner.lower_bound(signer.value), sigsBySigner.upper_bound(signer.value), feq);
             check(itr == sigsBySigner.upper_bound(signer.value), error::duplicateSigner.data());
 
+            // Calculate next block timestamp where we should service the pull transaction
+            auto timestamp = current_block_time();
+            auto nextTimestamp = block_timestamp(timestamp.to_time_point() + seconds(frequency.value));
+
             uint64_t index = static_cast<uint64_t>(distance(signatures.begin(), signatures.end()));
             auto addSigner = [&](SignerData& row) {
                 row.index = index;
-                row.contractID = contractID;
-                row.drafter = drafter;
                 row.signer = signer;
+                row.contractID = contractID;
+                row.serviceBlock = nextTimestamp;
+                row.drafter = drafter;
                 row.quantity = quantity;
                 row.frequency = frequency;
                 row.signerMemo = signerMemo;

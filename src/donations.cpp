@@ -12,16 +12,11 @@
 
 using namespace eosio;
 using namespace system_epn;
-using eosio::time_point_sec;
 using std::string;
 
 void donations::draftdon(const name& owner, const name& contractID, const Memo& memoSuffix)
 {
     require_auth(owner);
-
-    print("Current time point in microseconds: " + eosio::microseconds_to_str(current_time_point().elapsed.count()));
-    print("Current block time: ");
-    //print(current_block_time());
 
     Donations().draft(owner, contractID, memoSuffix);
 }
