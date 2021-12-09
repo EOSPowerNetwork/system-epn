@@ -8,7 +8,7 @@
 // Do not modify once contract is live
 namespace fixedProps {
     static constexpr auto contract_account = "system.epn"_n;
-    
+
     namespace memo {
         using std::string_view;
 
@@ -54,15 +54,8 @@ namespace fixedProps {
             int64_t maximum;
         };
 
-        // Constexpr power function
-        // Credit: https://prosepoetrycode.potterpcs.net/2015/07/a-simple-constexpr-power-function-c/
-        constexpr int64_t ipow(int64_t num, unsigned int pow)
-        {
-            return (pow >= sizeof(unsigned int) * 8) ? 0 : pow == 0 ? 1 : num * ipow(num, pow - 1);
-        }
-
         constexpr uint64_t precision = 4;
-        constexpr int64_t EOS = ipow(10, precision);
+        constexpr int64_t EOS = 1e4;
         constexpr array<AssetProps, 1> supportedTokens = {AssetProps(symbol("EOS", precision), "eosio.token"_n, 1 * EOS, 1000 * EOS)};
 
         constexpr std::optional<AssetProps> getAssetProps(const eosio::symbol_code& sym)
