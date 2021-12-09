@@ -312,7 +312,7 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
                     CHECK(distance == 1);  // "Spurious signer data"
                 }
 
-                THEN("The expected amount of RAM is released and consumed")
+                THEN("The signer consumes the expected amount of RAM")
                 {
                     auto ramDeltas = getFirstRamDeltaSummary(trace);
                     CHECK(ramDeltas.size() == 1);            // Only one account should have a ram delta
