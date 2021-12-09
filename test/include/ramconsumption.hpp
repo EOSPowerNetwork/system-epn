@@ -6,7 +6,7 @@ namespace system_epn {
     namespace ramConsumption_bytes {
         namespace firstEmplace {
             constexpr int64_t DraftDonation = 237;
-            constexpr int64_t SignDonation = 656;
+            constexpr int64_t SignDonation = 900;
         }  // namespace firstEmplace
         namespace subsequentEmplace {
             constexpr int64_t DraftDonation = 125;
