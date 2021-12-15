@@ -19,6 +19,7 @@ _Names of contracts and what they are used for_
 - Operators register
 - Operators configure supported asset types
 - Sets the permissions according to the top elected BPs
+- Users set the name of their permission the EPN system contract is authorized to satisfy
 - Users create all payment contracts
 
 ## exec.epn
