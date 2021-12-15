@@ -2,7 +2,8 @@
 
 #include <string_view>
 
-namespace error {
+namespace error
+{
     using std::string_view;
     constexpr string_view doubleDraft = "Contract already drafted";
     constexpr string_view missingAuth = "Missing required authority";
@@ -14,4 +15,5 @@ namespace error {
     constexpr string_view contractDNE = "Contract does not exist";
     constexpr string_view invalidAssetData = "Asset data invalid";
     constexpr string_view missingPermission = "Provided keys, permissions, and delays do not satisfy declared authorizations";
+    constexpr string_view invalidPaymentAmount = "Invalid payment amount";
 }  // namespace error

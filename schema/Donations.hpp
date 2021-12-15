@@ -12,7 +12,8 @@
 #include "Memo.hpp"
 #include "fixedprops.hpp"
 
-namespace system_epn {
+namespace system_epn
+{
     using eosio::block_timestamp;
     using eosio::const_mem_fun;
     using eosio::current_block_time;
@@ -27,23 +28,19 @@ namespace system_epn {
     struct SignerData {
         SignerData() = default;
 
-        uint64_t primary_key() const
-        {
+        uint64_t primary_key() const {
             return index;
         }
 
-        uint64_t get_secondary_1() const
-        {
+        uint64_t get_secondary_1() const {
             return signer.value;
         }
 
-        uint64_t get_secondary_2() const
-        {
+        uint64_t get_secondary_2() const {
             return contractID.value;
         }
 
-        uint64_t get_secondary_3() const
-        {
+        uint64_t get_secondary_3() const {
             return serviceBlock.to_time_point().elapsed.count();
         }
 
@@ -69,8 +66,7 @@ namespace system_epn {
         name contractID;
         Memo memoSuffix;
 
-        uint64_t primary_key() const
-        {
+        uint64_t primary_key() const {
             return contractID.value;
         }
     };
@@ -83,14 +79,12 @@ namespace system_epn {
         DonationContract(const name& drafter, const name& contractID)
             //: SignerMIType(fixedProps::contract_account, fixedProps::contract_account.value)
             : drafter(drafter)
-            , contractID(contractID)
-        {
+            , contractID(contractID) {
             auto drafts = DrafterMIType(fixedProps::contract_account, drafter.value);
             check(drafts.find(contractID.value) != drafts.end(), error::contractDNE.data());
         }
 
-        void sign(const name& signer, const Asset& quantity, const Frequency& frequency, const Memo& signerMemo)
-        {
+        void sign(const name& signer, const Asset& quantity, const Frequency& frequency, const Memo& signerMemo) {
             check(signer != drafter, error::invalidSigner.data());
             SignerMIType signatures(fixedProps::contract_account, fixedProps::contract_account.value);
 
@@ -119,6 +113,14 @@ namespace system_epn {
             signatures.emplace(ram_payer, addSigner);
         }
 
+        Memo getMemoSuffix() const {
+            auto drafts = DrafterMIType(fixedProps::contract_account, drafter.value);
+            auto iter = drafts.find(contractID.value);
+            check(iter != drafts.end(), error::contractDNE.data());
+
+            return iter->memoSuffix;
+        }
+
        private:
         name drafter;
         name contractID;
@@ -126,8 +128,7 @@ namespace system_epn {
 
     class Donations {
        public:
-        void draft(const name& owner, const name& contractID, const Memo& memoSuffix)
-        {
+        void draft(const name& owner, const name& contractID, const Memo& memoSuffix) {
             auto drafts = DrafterMIType(fixedProps::contract_account, owner.value);
             check(drafts.find(contractID.value) == drafts.end(), error::doubleDraft.data());
 
@@ -140,8 +141,7 @@ namespace system_epn {
             drafts.emplace(ram_payer, configureNewDraft);  //Todo change back to ramPpayer
         }
 
-        DonationContract getDonation(const name& drafter, const name& contractID)
-        {
+        DonationContract getDonation(const name& drafter, const name& contractID) {
             return DonationContract(drafter, contractID);
         }
     };

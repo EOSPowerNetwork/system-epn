@@ -9,7 +9,8 @@
 #include "errormessages.hpp"
 #include "fixedprops.hpp"
 
-namespace system_epn {
+namespace system_epn
+{
     using eosio::asset;
     using eosio::check;
     using eosio::name;
@@ -19,14 +20,12 @@ namespace system_epn {
 
     struct Asset {
         Asset() = default;
-        Asset(asset quantity)
-        {
+        Asset(asset quantity) {
             check(validate(quantity), error::invalidAssetData.data());
             value = quantity;
         }
 
-        constexpr static bool validate(const asset& quantity)
-        {
+        constexpr static bool validate(const asset& quantity) {
             auto IsValid = [&](const fixedProps::Assets::AssetProps& ap) -> bool {
                 bool symbolMatch = (ap.sym == quantity.symbol);
                 bool quantityWithinRange = (ap.maximum >= quantity.amount) && (ap.minimum <= quantity.amount);
@@ -35,8 +34,7 @@ namespace system_epn {
             return find_if(supportedTokens.cbegin(), supportedTokens.cend(), IsValid) != supportedTokens.cend();
         }
 
-        static name getTokenContract(const Asset& a)
-        {
+        static name getTokenContract(const Asset& a) {
             auto SymbolMatch = [&](const auto& supported) { return (supported.sym == a.value.symbol); };
             auto itr = find_if(supportedTokens.cbegin(), supportedTokens.cend(), SymbolMatch);
             check(itr != supportedTokens.cend(), "Symbol is not supported. This should never happen.");

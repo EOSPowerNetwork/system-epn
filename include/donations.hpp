@@ -8,16 +8,16 @@
 
 #include "Donations.hpp"
 
-namespace system_epn {
+namespace system_epn
+{
     using namespace eosio;
-    using std::pair;
 
     extern const char* draftdon_ricardian;
     extern const char* signdon_ricardian;
     extern const char* ricardian_clause2;
 
-    pair<Asset, Asset> _splitPayment(const Asset& payment);
-    void transfer(const name& from, const name& to, const permission_level& permission, const Asset& payment, const Memo& memo);
+    // Todo - Should eventually be moved into common utility class, since it will be needed for all contract types
+    void transfer(const name& from, const name& to, const permission_level& permission, const Asset& payment, const Memo& signerMemo, const Memo& drafterMemo);
 
     class donations : public contract {
        public:
