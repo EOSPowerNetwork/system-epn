@@ -40,42 +40,28 @@ namespace testData
 }
 
 // Setup function to install my contract to the chain
-void setup_installMyContract(test_chain& t) {
+void setup_installMySystemContracts(test_chain& t) {
     t.create_code_account(fixedProps::contract_account);
     t.set_code(fixedProps::contract_account, "artifacts/system_epn.wasm");
+
+    // Todo - Eventually the revenue account will be a contract
+    t.create_account(fixedProps::revenue_account);
 }
 
 // Setup function to add some accounts to the chain
-void setup_createAccounts(test_chain& t) {
-    tester_authority simple_auth{
-        .threshold = 1,
-        .keys = {{test_chain::default_pub_key, 1}},
-    };
-
+void setup_createUserAccounts(test_chain& t) {
     for (auto user : {"alice"_n, "bob"_n, "charlie"_n, "dan"_n}) {
-        //t.create_account(user);
-        // clang-format off
-        t.transact({action{{{"eosio"_n, "active"_n}},
-                           "eosio"_n,
-                           "newaccount"_n,
-                           std::make_tuple("eosio"_n, user, simple_auth, simple_auth)}},
-                   nullptr);
-        //clang-format on
+        t.create_account(user);
     }
 }
 
 void setup_createPowerUserAccounts(test_chain& t) {
-
     tester_authority simple_auth{
         .threshold = 1,
         .keys = {{test_chain::default_pub_key, 1}},
     };
 
-    tester_authority power_user_auth{
-        .threshold = 1,
-        .keys = {{test_chain::default_pub_key, 1}},
-        .accounts = {{{EPNauthority, 1}}}
-    };
+    tester_authority power_user_auth{.threshold = 1, .keys = {{test_chain::default_pub_key, 1}}, .accounts = {{{EPNauthority, 1}}}};
 
     for (auto user : {"alice"_n, "bob"_n, "charlie"_n, "dan"_n}) {
         t.transact({action{
@@ -94,35 +80,27 @@ void setup_createPowerUserAccounts(test_chain& t) {
 void setup_setPowerUserAccount(test_chain::user_context& user) {
     check(user.level.size() > 0, "Should never happen. User doesn't have any permmissions.");
 
-    tester_authority power_user_auth{
-        .threshold = 1,
-        .keys = {{test_chain::default_pub_key, 1}},
-        .accounts = {{{EPNauthority, 1}}}
-    };
+    tester_authority power_user_auth{.threshold = 1, .keys = {{test_chain::default_pub_key, 1}}, .accounts = {{{EPNauthority, 1}}}};
 
     eosio::name userName = user.level[0].actor;
 
     auto trace = user.t.transact({action{
-                        user.level,                       // Auth
-                        "eosio"_n,                        // Contract account
-                        "updateauth"_n,                   // Action
-                        std::make_tuple(userName,         // Account
-                                        "active"_n,       // Permission
-                                        "owner"_n,        // Parent permission
-                                        power_user_auth)  // New authority
-                    }},
-                    {test_chain::default_priv_key},  // Signed Keys
-                    nullptr                          // Expected exception
+                                     user.level,                       // Auth
+                                     "eosio"_n,                        // Contract account
+                                     "updateauth"_n,                   // Action
+                                     std::make_tuple(userName,         // Account
+                                                     "active"_n,       // Permission
+                                                     "owner"_n,        // Parent permission
+                                                     power_user_auth)  // New authority
+                                 }},
+                                 {test_chain::default_priv_key},  // Signed Keys
+                                 nullptr                          // Expected exception
     );
     expect(trace, nullptr);
 }
 
 test_chain::user_context setup_getPowerUser(test_chain& t) {
-    tester_authority power_user_auth{
-        .threshold = 1,
-        .keys = {{test_chain::default_pub_key, 1}},
-        .accounts = {{{EPNauthority, 1}}}
-    };
+    tester_authority power_user_auth{.threshold = 1, .keys = {{test_chain::default_pub_key, 1}}, .accounts = {{{EPNauthority, 1}}}};
     auto user{"ethan"_n};
     // clang-format off
     t.transact({action{{{"eosio"_n, "active"_n}},
@@ -181,8 +159,8 @@ auto get3Acc(test_chain& t) {
 }
 
 void setupChain(test_chain& t) {
-    setup_installMyContract(t);
-    setup_createAccounts(t);
+    setup_installMySystemContracts(t);
+    setup_createUserAccounts(t);
 }
 
 vector<ship_protocol::account_delta> getFirstRamDeltaSummary(const transaction_trace& trace) {

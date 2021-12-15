@@ -6,10 +6,13 @@
 #include <string_view>
 
 // Do not modify once contract is live
-namespace fixedProps {
+namespace fixedProps
+{
     static constexpr auto contract_account = "system.epn"_n;
+    static constexpr auto revenue_account = "revenue.epn"_n;
 
-    namespace memo {
+    namespace memo
+    {
         using std::string_view;
 
         constexpr string_view memoDelimiter = " -- ";
@@ -28,16 +31,20 @@ namespace fixedProps {
         static_assert(memoDelimiter.size() + marketingMemo.size() + 2 * memoSize == totalMemoBytes);
     }  // namespace memo
 
-    namespace Frequency {
+    namespace Frequency
+    {
         constexpr uint32_t minimum_frequency_seconds = 23 * 60 * 60;        // 23 hours
         constexpr uint32_t maximum_frequency_seconds = 365 * 24 * 60 * 60;  // One year
     }                                                                       // namespace Frequency
 
-    namespace Assets {
+    namespace Assets
+    {
         using eosio::name;
         using eosio::symbol;
         using std::array;
         using std::find_if;
+
+        constexpr float transactionFee = 0.03;
 
         struct AssetProps {
             AssetProps() = default;
@@ -45,9 +52,7 @@ namespace fixedProps {
                 : sym(sym)
                 , contract(contract)
                 , minimum(min)
-                , maximum(max)
-            {
-            }
+                , maximum(max) {}
             eosio::symbol sym;
             eosio::name contract;
             int64_t minimum;
@@ -58,8 +63,7 @@ namespace fixedProps {
         constexpr int64_t EOS = 1e4;
         constexpr array<AssetProps, 1> supportedTokens = {AssetProps(symbol("EOS", precision), "eosio.token"_n, 1 * EOS, 1000 * EOS)};
 
-        constexpr std::optional<AssetProps> getAssetProps(const eosio::symbol_code& sym)
-        {
+        constexpr std::optional<AssetProps> getAssetProps(const eosio::symbol_code& sym) {
             auto& s = supportedTokens;
             auto DoSymbolsMatch = [&](const AssetProps& props) {
                 bool match = (props.sym.code() == sym);

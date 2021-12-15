@@ -21,6 +21,7 @@ using system_epn::SignerMIType;
 
 using eosio::asset;
 using eosio::milliseconds;
+using eosio::symbol;
 using eosio::symbol_code;
 using std::string;
 using std::string_view;
@@ -326,14 +327,24 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
                         CHECK(initialFunds - amount == donationAmount);
                     }
 
-                    // THEN("Alice should have [donationAmount - fee] more EOS") {
-                    //     // Calculate Alice's revenue from the donation
-                    //     auto amount = token::contract::get_balance("eosio.token"_n, "alice"_n, symbol_code({"EOS"}));
+                    THEN("Alice should have [donationAmount - fee] more EOS") {
+                        // Calculate what balance Alice should have based on the donation amount
+                        asset feeAmount(static_cast<int64_t>(donationAmount.amount * fixedProps::Assets::transactionFee), symbol("EOS", 4));
+                        check(donationAmount > feeAmount, "Must be true");
+                        asset calculatedBalance = initialFunds + (donationAmount - feeAmount);
 
-                    //     CHECK(amount - initialFunds == donationAmount /*   *fee  */);
+                        // Get Alice's actual balance
+                        auto realBalance = token::contract::get_balance("eosio.token"_n, "alice"_n, symbol_code({"EOS"}));
 
-                    //     CHECK(false);  // This test is not completed yet, needs to account for the fee
-                    // }
+                        // Confirm they are equal
+                        CHECK(realBalance == calculatedBalance);
+                    }
+
+                    THEN("EPN revenue account should have [fee] more EOS") {
+                        asset feeAmount(static_cast<int64_t>(donationAmount.amount * fixedProps::Assets::transactionFee), symbol("EOS", 4));
+                        auto realBalance = token::contract::get_balance("eosio.token"_n, fixedProps::revenue_account, symbol_code({"EOS"}));
+                        CHECK(realBalance == feeAmount);
+                    }
 
                     // WHEN("Less time has passed than the frequency") {
                     //     uint32_t frequencyInBlocks = freq_23Hours.value * 2;  // Seconds to blocks, 500ms block time
