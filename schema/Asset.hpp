@@ -12,6 +12,7 @@
 namespace system_epn {
     using eosio::asset;
     using eosio::check;
+    using eosio::name;
     using eosio::print;
     using fixedProps::Assets::supportedTokens;
     using std::find_if;
@@ -32,6 +33,15 @@ namespace system_epn {
                 return symbolMatch && quantityWithinRange;
             };
             return find_if(supportedTokens.cbegin(), supportedTokens.cend(), IsValid) != supportedTokens.cend();
+        }
+
+        static name getTokenContract(const Asset& a)
+        {
+            auto SymbolMatch = [&](const auto& supported) { return (supported.sym == a.value.symbol); };
+            auto itr = find_if(supportedTokens.cbegin(), supportedTokens.cend(), SymbolMatch);
+            check(itr != supportedTokens.cend(), "Symbol is not supported. This should never happen.");
+
+            return itr->contract;
         }
 
         eosio::asset value;
