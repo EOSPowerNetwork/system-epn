@@ -29,61 +29,49 @@ using std::vector;
 
 ///////////////////////////////////////////////////////////////////////////////////////
 constexpr auto testsuite_donations = "[Donations]";
-SCENARIO("0. Data type tests:", testsuite_donations)
-{
-    GIVEN("A valid memo")
-    {
+SCENARIO("0. Data type tests:", testsuite_donations) {
+    GIVEN("A valid memo") {
         constexpr string_view passing_memo = "VeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongMemo";
         static_assert(passing_memo.size() == fixedProps::memo::memoSize);
-        THEN("A Memo object can be constructed")
-        {
+        THEN("A Memo object can be constructed") {
             CHECK(Memo::validate(passing_memo) == true);
         }
     }
 
-    GIVEN("An invalid memo")
-    {
+    GIVEN("An invalid memo") {
         constexpr string_view failing_memo = "AVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongMemo";
         static_assert(failing_memo.size() == fixedProps::memo::memoSize + 1);
-        THEN("A Memo object cannot be constructed")
-        {
+        THEN("A Memo object cannot be constructed") {
             CHECK(Memo::validate(failing_memo) == false);
         }
     }
 
-    GIVEN("A valid frequency")
-    {
+    GIVEN("A valid frequency") {
         constexpr uint32_t validFrequency = fixedProps::Frequency::minimum_frequency_seconds;
-        THEN("A Frequency object can be constructed")
-        {
+        THEN("A Frequency object can be constructed") {
             CHECK(Frequency::validate(validFrequency) == true);
         }
     }
 
-    GIVEN("An invalid frequency")
-    {
+    GIVEN("An invalid frequency") {
         constexpr uint32_t invalidFrequency1 = fixedProps::Frequency::minimum_frequency_seconds - 1;
         constexpr uint32_t invalidFrequency2 = fixedProps::Frequency::maximum_frequency_seconds + 1;
-        THEN("A Frequency object cannot be constructed")
-        {
+        THEN("A Frequency object cannot be constructed") {
             CHECK(Frequency::validate(invalidFrequency1) == false);
             CHECK(Frequency::validate(invalidFrequency2) == false);
         }
     }
 
-    GIVEN("An invalid test asset type")
-    {
+    GIVEN("An invalid test asset type") {
         asset invalidAsset(s2a("100.0000 HAX"));
         check(!fixedProps::Assets::getAssetProps(invalidAsset.symbol.code()), "Asset type must not be supported");
 
-        THEN("An Asset object cannot be constructed")
-        {
+        THEN("An Asset object cannot be constructed") {
             CHECK(Asset::validate(invalidAsset) == false);
         }
     }
 
-    GIVEN("A supported asset type with an out of range (over maximum) quantity")
-    {
+    GIVEN("A supported asset type with an out of range (over maximum) quantity") {
         eosio::symbol validSymbol("EOS", 4);
         auto props = fixedProps::Assets::getAssetProps(validSymbol.code());
         check(static_cast<bool>(props), "Asset type must be supported");
@@ -94,14 +82,12 @@ SCENARIO("0. Data type tests:", testsuite_donations)
 
         asset invalidAsset(invalidAmount, validSymbol);
 
-        THEN("An Asset object cannot be constructed")
-        {
+        THEN("An Asset object cannot be constructed") {
             CHECK(Asset::validate(invalidAsset) == false);
         }
     }
 
-    GIVEN("A supported asset type with an out of range (under minimum) quantity")
-    {
+    GIVEN("A supported asset type with an out of range (under minimum) quantity") {
         eosio::symbol validSymbol("EOS", 4);
         auto props = fixedProps::Assets::getAssetProps(validSymbol.code());
         check(static_cast<bool>(props), "Asset type must be supported");
@@ -112,14 +98,12 @@ SCENARIO("0. Data type tests:", testsuite_donations)
 
         asset invalidAsset(invalidAmount, validSymbol);
 
-        THEN("An Asset object cannot be constructed")
-        {
+        THEN("An Asset object cannot be constructed") {
             CHECK(Asset::validate(invalidAsset) == false);
         }
     }
 
-    GIVEN("A supported asset type with a quantity in range")
-    {
+    GIVEN("A supported asset type with a quantity in range") {
         eosio::symbol validSymbol("EOS", 4);
         auto props = fixedProps::Assets::getAssetProps(validSymbol.code());
         check(static_cast<bool>(props), "Asset type must be supported");
@@ -135,18 +119,15 @@ SCENARIO("0. Data type tests:", testsuite_donations)
         asset validAsset1(validAmount1, validSymbol);
         asset validAsset2(validAmount2, validSymbol);
 
-        THEN("An Asset object may be constructed")
-        {
+        THEN("An Asset object may be constructed") {
             CHECK(Asset::validate(validAsset1) == true);
             CHECK(Asset::validate(validAsset2) == true);
         }
     }
 }
 
-SCENARIO("1. A single drafter using the draftdon action", testsuite_donations)
-{
-    GIVEN("An initial empty chain setup")
-    {
+SCENARIO("1. A single drafter using the draftdon action", testsuite_donations) {
+    GIVEN("An initial empty chain setup") {
         test_chain t;
         setupChain(t);
         auto alice{getAcc(t)};
@@ -154,22 +135,19 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations)
         auto owner = "alice"_n;
         auto contractID = "donation1"_n;
 
-        THEN("Alice's donation should not exist")
-        {
+        THEN("Alice's donation should not exist") {
             DrafterMIType _drafts(code, owner.value);
             auto donationIter = _drafts.find(contractID.value);
             CHECK(donationIter == _drafts.end());
         }
 
-        WHEN("Alice creates a donation")
-        {
+        WHEN("Alice creates a donation") {
             Memo memo{"Memo"};
 
             auto trace = alice.trace<draftdon>(owner, contractID, memo);
             expect(trace, nullptr);
 
-            THEN("The donation contract should exist")
-            {
+            THEN("The donation contract should exist") {
                 DrafterMIType _drafts(code, owner.value);
                 auto donationIter = _drafts.find(contractID.value);
                 CHECK(donationIter != _drafts.end());           // "Donation not saved to state"
@@ -177,8 +155,7 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations)
                 CHECK(donationIter->memoSuffix == memo);        // "Memo not saved properly"
             }
 
-            THEN("Alice is the only one whose RAM is consumed")
-            {
+            THEN("Alice is the only one whose RAM is consumed") {
                 const vector<action_trace>& actions = trace.action_traces;
                 check(actions.size() == 1, "More than one action? This should never happen.");
                 const auto& ramDeltas = actions.at(0).account_ram_deltas;
@@ -187,26 +164,22 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations)
                 const auto& delta = ramDeltas.at(0);
                 CHECK(delta.account == "alice"_n);
 
-                AND_THEN("Alice should have consumed the expected amount of RAM for first emplace")
-                {
+                AND_THEN("Alice should have consumed the expected amount of RAM for first emplace") {
                     CHECK(delta.delta == ramConsumption_bytes::firstEmplace::DraftDonation);
                 }
             }
 
-            THEN("A second donation may be created using a different name")
-            {
+            THEN("A second donation may be created using a different name") {
                 auto trace2 = alice.trace<draftdon>(owner, "donation2"_n, "Memo");
                 CHECK(succeeded(trace2));
 
-                AND_THEN("Alice should have consumed the expected amount of RAM for subsequent emplace")
-                {
+                AND_THEN("Alice should have consumed the expected amount of RAM for subsequent emplace") {
                     const auto ramdelta = trace2.action_traces[0].account_ram_deltas[0];
                     CHECK(ramdelta.delta == ramConsumption_bytes::subsequentEmplace::DraftDonation);
                 }
             }
 
-            THEN("A second donation with the same name cannot be created")
-            {
+            THEN("A second donation with the same name cannot be created") {
                 t.start_block(1000);
                 auto trace3 = alice.trace<draftdon>(owner, contractID, "Memo");
                 CHECK(failedWith(trace3, error::doubleDraft));
@@ -215,30 +188,24 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations)
     }
 }
 
-SCENARIO("2. Two drafters using the draftdon action", testsuite_donations)
-{
-    GIVEN("An initial empty chain setup")
-    {
+SCENARIO("2. Two drafters using the draftdon action", testsuite_donations) {
+    GIVEN("An initial empty chain setup") {
         test_chain t;
         setupChain(t);
 
-        AND_GIVEN("Two different potential drafters, Alice and Bob")
-        {
+        AND_GIVEN("Two different potential drafters, Alice and Bob") {
             auto [alice, bob] = get2Acc(t);
 
-            THEN("Alice cannot create a donation for Bob without his authorization")
-            {
+            THEN("Alice cannot create a donation for Bob without his authorization") {
                 auto trace = alice.trace<draftdon>("bob"_n, "mydonation"_n, "Memo");
                 CHECK(failedWith(trace, error::missingAuth));
             }
 
-            WHEN("Alice creates a donation")
-            {
+            WHEN("Alice creates a donation") {
                 name aliceContractName = "adonation"_n;
                 alice.act<draftdon>("alice"_n, aliceContractName, "Memo");
 
-                THEN("Bob can also create a contract with the same name")
-                {
+                THEN("Bob can also create a contract with the same name") {
                     auto trace = bob.trace<draftdon>("bob"_n, aliceContractName, "Memo");
                     CHECK(succeeded(trace));
                 }
@@ -247,15 +214,14 @@ SCENARIO("2. Two drafters using the draftdon action", testsuite_donations)
     }
 }
 
-SCENARIO("3. A single signer using the \"signdon\" action to sign a single donation draft", testsuite_donations)
-{
-    GIVEN("A chain in which Alice drafted a donation")
-    {
+SCENARIO("3. A single signer using the \"signdon\" action to sign a single donation draft", testsuite_donations) {
+    GIVEN("Given a chain with no power users in which Alice drafted a donation") {
         test_chain t;
         setupChain(t);
         setup_EOS_token(t);
 
-        auto [alice, bob] = get2Acc(t);
+        auto [alice, bob, charlie] = get3Acc(t);
+        auto ethan = setup_getPowerUser(t);
         auto code = fixedProps::contract_account;
         auto owner = "alice"_n;
         auto contractID = "donation1"_n;
@@ -265,13 +231,13 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
 
         alice.act<draftdon>(owner, contractID, drafterMemo);
 
-        AND_GIVEN("Alice and Bob each have 1,000 EOS")
-        {
+        AND_GIVEN("Alice and Bob each have 1,000 EOS") {
             setup_fundUser(t, "alice"_n, initialFunds);
             setup_fundUser(t, "bob"_n, initialFunds);
+            setup_fundUser(t, "charlie"_n, initialFunds);
+            setup_fundUser(t, "ethan"_n, initialFunds);
 
-            THEN("The donation should have zero signers")
-            {
+            THEN("The donation should have zero signers") {
                 SignerMIType _signatures(code, code.value);
                 auto s = _signatures.get_index<"bycontractid"_n>();
                 auto end = s.upper_bound(contractID.value);
@@ -280,110 +246,114 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
                 CHECK(contractItr == end);  // It would onlt appear in the signature table if there was at least one signature
             }
 
-            THEN("Alice cannot sign her own donation")
-            {
+            THEN("Alice cannot sign her own donation") {
                 asset q{s2a("1.0000 EOS")};
                 auto t = alice.trace<signdon>("alice"_n, owner, contractID, q, freq_23Hours, signerMemo);
                 CHECK(failedWith(t, error::invalidSigner));
             }
 
-            THEN("Bob can sign Alice's donation")
-            {
+            THEN("Bob cannot sign Alice's donation") {
                 asset q{s2a("1.0000 EOS")};
                 name signer = "bob"_n;
                 name drafter = owner;
                 auto t = bob.trace<signdon>(signer, drafter, contractID, q, freq_23Hours, signerMemo);
-                CHECK(succeeded(t));
+                CHECK(failedWith(t, error::missingPermission.data()));
             }
 
-            WHEN("Bob signs Alice's donation")
-            {
-                asset donationAmount{s2a("1.0000 EOS")};
-                name signer = "bob"_n;
-                auto trace = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, signerMemo);
-                expect(trace, nullptr);
+            WHEN("Bob registers as a power user") {
+                setup_setPowerUserAccount(bob);
 
-                THEN("The donation should have exactly one signer")
-                {
-                    SignerMIType _signatures(code, code.value);
-                    auto s = _signatures.get_index<"bycontractid"_n>();
-                    auto distance = std::distance(s.lower_bound(contractID.value), s.upper_bound(contractID.value));
-
-                    CHECK(distance == 1);  // "Spurious signer data"
+                THEN("Bob can sign Alice's donation") {
+                    asset q{s2a("1.0000 EOS")};
+                    name signer = "bob"_n;
+                    name drafter = owner;
+                    auto t = bob.trace<signdon>(signer, drafter, contractID, q, freq_23Hours, signerMemo);
+                    expect(t, nullptr);
+                    CHECK(succeeded(t));
                 }
 
-                THEN("The signer consumes the expected amount of RAM")
-                {
-                    auto ramDeltas = getFirstRamDeltaSummary(trace);
-                    CHECK(ramDeltas.size() == 1);            // Only one account should have a ram delta
-                    CHECK(ramDeltas[0].account == "bob"_n);  // And it should be the signer, Bob
-                    CHECK(getRamDelta(ramDeltas[0], "bob"_n) == ramConsumption_bytes::firstEmplace::SignDonation);
-                }
+                WHEN("Bob signs Alice's donation") {
+                    asset donationAmount{s2a("1.0000 EOS")};
+                    name signer = "bob"_n;
+                    auto trace = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, signerMemo);
+                    expect(trace, nullptr);
 
-                THEN("Bob cannot sign Alice's donation again")
-                {
-                    Memo anotherSignerMemo{"Let's subscribe again!"};
-                    auto trace2 = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, anotherSignerMemo);
-                    CHECK(failedWith(trace2, error::duplicateSigner));
-                }
+                    THEN("The donation should have exactly one signer") {
+                        SignerMIType _signatures(code, code.value);
+                        auto s = _signatures.get_index<"bycontractid"_n>();
+                        auto distance = std::distance(s.lower_bound(contractID.value), s.upper_bound(contractID.value));
 
-                THEN("The scheduled block to service the transaction should be correct")
-                {
-                    /* Note: test_chain head block timestamp shows the timestamp of the last completed block, 
+                        CHECK(distance == 1);  // "Spurious signer data"
+                    }
+
+                    THEN("The signer consumes the expected amount of RAM") {
+                        auto ramDeltas = getFirstRamDeltaSummary(trace);
+                        CHECK(ramDeltas.size() == 1);            // Only one account should have a ram delta
+                        CHECK(ramDeltas[0].account == "bob"_n);  // And it should be the signer, Bob
+                        CHECK(getRamDelta(ramDeltas[0], "bob"_n) == ramConsumption_bytes::firstEmplace::SignDonation);
+                    }
+
+                    THEN("Bob cannot sign Alice's donation again") {
+                        Memo anotherSignerMemo{"Let's subscribe again!"};
+                        auto trace2 = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, anotherSignerMemo);
+                        CHECK(failedWith(trace2, error::duplicateSigner));
+                    }
+
+                    THEN("The scheduled block to service the transaction should be correct") {
+                        /* Note: test_chain head block timestamp shows the timestamp of the last completed block,
                     current_block() in the contract shows the timestamp of the current (incomplete) block. */
 
-                    // Calculate expected service block timestamp
-                    int64_t blockTime = milliseconds(500).count();  // in microseconds
-                    int64_t lastProducedBlockTimestamp = t.get_head_block_info().timestamp.to_time_point().elapsed.count();
-                    int64_t activeBlockTimestamp = lastProducedBlockTimestamp + blockTime;
-                    int64_t serviceBlockTimestamp = activeBlockTimestamp + toMicroseconds(freq_23Hours);
+                        // Calculate expected service block timestamp
+                        int64_t blockTime = milliseconds(500).count();  // in microseconds
+                        int64_t lastProducedBlockTimestamp = t.get_head_block_info().timestamp.to_time_point().elapsed.count();
+                        int64_t activeBlockTimestamp = lastProducedBlockTimestamp + blockTime;
+                        int64_t serviceBlockTimestamp = activeBlockTimestamp + toMicroseconds(freq_23Hours);
 
-                    // Get what the contract calculated
-                    SignerMIType _signatures(code, code.value);
-                    auto s = _signatures.get_index<"bycontractid"_n>();
-                    auto end = s.upper_bound(contractID.value);
-                    auto itr = std::find_if(s.lower_bound(contractID.value), s.upper_bound(contractID.value), [&](const SignerData& row) { return (row.drafter == owner); });
-                    check(itr != end, "Contract doesn't exist? Should never happen.");
-                    int64_t contractServiceBlockTimestamp = itr->serviceBlock.to_time_point().elapsed.count();
+                        // Get what the contract calculated
+                        SignerMIType _signatures(code, code.value);
+                        auto s = _signatures.get_index<"bycontractid"_n>();
+                        auto end = s.upper_bound(contractID.value);
+                        auto itr = std::find_if(s.lower_bound(contractID.value), s.upper_bound(contractID.value), [&](const SignerData& row) { return (row.drafter == owner); });
+                        check(itr != end, "Contract doesn't exist? Should never happen.");
+                        int64_t contractServiceBlockTimestamp = itr->serviceBlock.to_time_point().elapsed.count();
 
-                    // Confirm they match
-                    CHECK(serviceBlockTimestamp == contractServiceBlockTimestamp);
-                }
+                        // Confirm they match
+                        CHECK(serviceBlockTimestamp == contractServiceBlockTimestamp);
+                    }
 
-                THEN("Bob should have [donationAmount] less EOS")
-                {
-                    auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
-                    CHECK(initialFunds - amount == donationAmount);
-                }
-
-                THEN("Alice should have [donationAmount] more EOS")
-                {
-                    auto amount = token::contract::get_balance("eosio.token"_n, "alice"_n, symbol_code({"EOS"}));
-                    CHECK(amount - initialFunds == donationAmount);
-                }
-
-                WHEN("Less time has passed than the frequency")
-                {
-                    uint32_t frequencyInBlocks = freq_23Hours.value * 2;  // Seconds to blocks, 500ms block time
-                    uint32_t notEnoughBlocks = frequencyInBlocks - 1;
-                    t.start_block(notEnoughBlocks);
-                    THEN("Bob has still only made one donation")
-                    {
+                    THEN("Bob should have [donationAmount] less EOS") {
                         auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
                         CHECK(initialFunds - amount == donationAmount);
                     }
-                }
 
-                WHEN("Enough time has passed for one additional donation")
-                {
-                    uint32_t frequencyInBlocks = freq_23Hours.value * 2;  // Seconds to blocks, 500ms block time
-                    t.start_block(frequencyInBlocks);
-                    THEN("Bob has made one more donation")
-                    {
-                        auto totalDonated = 2 * donationAmount;
-                        auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
-                        CHECK(initialFunds - amount == totalDonated);
-                    }
+                    // THEN("Alice should have [donationAmount - fee] more EOS") {
+                    //     // Calculate Alice's revenue from the donation
+                    //     auto amount = token::contract::get_balance("eosio.token"_n, "alice"_n, symbol_code({"EOS"}));
+
+                    //     CHECK(amount - initialFunds == donationAmount /*   *fee  */);
+
+                    //     CHECK(false);  // This test is not completed yet, needs to account for the fee
+                    // }
+
+                    // WHEN("Less time has passed than the frequency") {
+                    //     uint32_t frequencyInBlocks = freq_23Hours.value * 2;  // Seconds to blocks, 500ms block time
+                    //     uint32_t notEnoughBlocks = frequencyInBlocks - 1;
+                    //     t.start_block(notEnoughBlocks);
+                    //     THEN("Bob has still only made one donation") {
+                    //         auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
+                    //         CHECK(initialFunds - amount == donationAmount);
+                    //     }
+                    // }
+
+                    // WHEN("Enough time has passed for one additional donation") {
+                    //     uint32_t frequencyInBlocks = freq_23Hours.value * 2;  // Seconds to blocks, 500ms block time
+                    //     t.start_block(frequencyInBlocks);
+                    //     THEN("Bob has made one more donation") {
+                    //         auto totalDonated = 2 * donationAmount;
+                    //         auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
+                    //         CHECK(initialFunds - amount == totalDonated);
+                    //     }
+                    // }
                 }
             }
         }

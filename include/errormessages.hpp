@@ -13,4 +13,5 @@ namespace error {
     constexpr string_view duplicateSigner = "Signer cannot sign twice";
     constexpr string_view contractDNE = "Contract does not exist";
     constexpr string_view invalidAssetData = "Asset data invalid";
+    constexpr string_view missingPermission = "Provided keys, permissions, and delays do not satisfy declared authorizations";
 }  // namespace error
