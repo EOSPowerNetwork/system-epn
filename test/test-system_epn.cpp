@@ -346,6 +346,33 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
                         CHECK(realBalance == feeAmount);
                     }
 
+                    WHEN("Nodeos with the EPN plugin is running")
+                    {
+                        // Make all prior transactions irreversible. This causes the transactions to
+                        // go into the block log.
+                        t.finish_block();
+                        t.finish_block();
+
+                        // Copy blocks.log into a fresh directory for nodeos to use
+                        eosio::execute("rm -rf example_chain");
+                        eosio::execute("mkdir -p example_chain/blocks");
+                        eosio::execute("cp " + t.get_path() + "/blocks/blocks.log example_chain/blocks");
+
+                        // Run nodeos
+                        eosio::execute(
+                            "nodeos -d example_chain "
+                            "--config-dir example_config "
+                            "--plugin eosio::chain_api_plugin "
+                            "--plugin eosio::epn_plugin "
+                            "--access-control-allow-origin \"*\" "
+                            "--access-control-allow-header \"*\" "
+                            "--http-validate-host 0 "
+                            "--http-server-address 0.0.0.0:8888 "
+                            "--contracts-console "
+                            "-e -p eosio");
+                    }
+
+
                     // WHEN("Less time has passed than the frequency") {
                     //     uint32_t frequencyInBlocks = freq_23Hours.value * 2;  // Seconds to blocks, 500ms block time
                     //     uint32_t notEnoughBlocks = frequencyInBlocks - 1;
