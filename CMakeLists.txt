@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.16)
 ## Basic configuration -- Only set the varables in this section
 set(PROJ system_epn)
 list(APPEND FILENAMES "donations" "paycontracts")
+list(APPEND EXTRATESTFILES "helpers" "epn_test_chain")
 ###################################################################
 
 
@@ -30,8 +31,12 @@ list(APPEND INCLUDE_DIRS "include/" "schema/")
 project(${PROJ})
 
 ## Advanced configuration -- Only change these if you know what you're doing
-### Generate test- file variable (Only one per project)
+### Generate test files
 string(REPLACE "${PROJ}" "${TESTDIR}test-${PROJ}.cpp" TESTNAME ${PROJ})
+foreach (testfile ${EXTRATESTFILES})
+  string(REPLACE "${testfile}" "${TESTDIR}${testfile}.cpp" temp ${testfile})
+  list(APPEND EXTRATESTFILELIST ${temp})
+endforeach()
 
 ### Generate -ricardian files variable (One per entry in FILENAMES)
 foreach (var ${FILENAMES})
@@ -107,8 +112,8 @@ add_custom_command(TARGET ${ABIGEN_PROJ} POST_BUILD
 # Tests must link to either cltestlib (runs faster) or cltestlib-debug
 # (shows stack traces on failure).
 set(TEST_PROJ test-${PROJ})
-add_executable(${TEST_PROJ} ${TESTNAME} ${RICARDIANLIST})
-target_include_directories(${TEST_PROJ} PRIVATE ${INCLUDE_DIRS})
+add_executable(${TEST_PROJ} ${TESTNAME} ${RICARDIANLIST} ${EXTRATESTFILELIST})
+target_include_directories(${TEST_PROJ} PRIVATE ${INCLUDE_DIRS} "${TESTDIR}/include")
 target_link_libraries(${TEST_PROJ} cltestlib-debug)
 
 # ctest rule which runs test-${PROJ}.wasm. The -v and -s

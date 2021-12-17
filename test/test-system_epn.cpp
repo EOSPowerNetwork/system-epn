@@ -1,18 +1,18 @@
 #include <eosio/asset.hpp>
-
 #include <iostream>
 #include <vector>
+
+#include "epn_test_chain.hpp"
 #include "errormessages.hpp"
 #include "fixedprops.hpp"
-#include "include/helpers.hpp"
-#include "include/ramconsumption.hpp"
+#include "helpers.hpp"
+#include "ramconsumption.hpp"
 
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
 using namespace system_epn::actions;
 using namespace system_epn;
-using namespace testData;
 using system_epn::Asset;
 using system_epn::DrafterMIType;
 using system_epn::Frequency;
@@ -23,10 +23,18 @@ using eosio::asset;
 using eosio::milliseconds;
 using eosio::symbol;
 using eosio::symbol_code;
+using std::find_if;
 using std::string;
 using std::string_view;
 using std::to_string;
 using std::vector;
+
+using system_epn::checks::failedWith;
+using system_epn::checks::succeeded;
+
+const vector<name> regularUsers = {"alice"_n, "bob"_n, "charlie"_n, "dan"_n};
+const vector<name> powerUsers = {"ethan"_n, "frank"_n, "gary"_n, "harry"_n};
+const system_epn::Frequency freq_23Hours{23 * 60 * 60};
 
 ///////////////////////////////////////////////////////////////////////////////////////
 constexpr auto testsuite_donations = "[Donations]";
@@ -129,9 +137,8 @@ SCENARIO("0. Data type tests:", testsuite_donations) {
 
 SCENARIO("1. A single drafter using the draftdon action", testsuite_donations) {
     GIVEN("An initial empty chain setup") {
-        test_chain t;
-        setupChain(t);
-        auto alice{getAcc(t)};
+        epn_test_chain t(regularUsers, powerUsers);
+        auto alice = t.as("alice"_n);
         auto code = fixedProps::contract_account;
         auto owner = "alice"_n;
         auto contractID = "donation1"_n;
@@ -181,7 +188,7 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations) {
             }
 
             THEN("A second donation with the same name cannot be created") {
-                t.start_block(1000);
+                t.getChain().start_block(1000);
                 auto trace3 = alice.trace<draftdon>(owner, contractID, "Memo");
                 CHECK(failedWith(trace3, error::doubleDraft));
             }
@@ -191,11 +198,10 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations) {
 
 SCENARIO("2. Two drafters using the draftdon action", testsuite_donations) {
     GIVEN("An initial empty chain setup") {
-        test_chain t;
-        setupChain(t);
+        epn_test_chain t(regularUsers, powerUsers);
 
         AND_GIVEN("Two different potential drafters, Alice and Bob") {
-            auto [alice, bob] = get2Acc(t);
+            auto [alice, bob] = t.as("alice"_n, "bob"_n);
 
             THEN("Alice cannot create a donation for Bob without his authorization") {
                 auto trace = alice.trace<draftdon>("bob"_n, "mydonation"_n, "Memo");
@@ -217,182 +223,170 @@ SCENARIO("2. Two drafters using the draftdon action", testsuite_donations) {
 
 SCENARIO("3. A single signer using the \"signdon\" action to sign a single donation draft", testsuite_donations) {
     GIVEN("Given a chain with no power users in which Alice drafted a donation") {
-        test_chain t;
-        setupChain(t);
-        setup_EOS_token(t);
+        epn_test_chain t(regularUsers, powerUsers);
 
-        auto [alice, bob, charlie] = get3Acc(t);
-        auto ethan = setup_getPowerUser(t);
+        auto [alice, bob, charlie, ethan] = t.as("alice"_n, "bob"_n, "charlie"_n, "ethan"_n);
         auto code = fixedProps::contract_account;
         auto owner = "alice"_n;
         auto contractID = "donation1"_n;
-        asset initialFunds = s2a("1000.0000 EOS");
+        asset initialFunds = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
         Memo drafterMemo{"Memo"};
         Memo signerMemo{"Signer memo"};
 
         alice.act<draftdon>(owner, contractID, drafterMemo);
 
-        AND_GIVEN("Alice and Bob each have 1,000 EOS") {
-            setup_fundUser(t, "alice"_n, initialFunds);
-            setup_fundUser(t, "bob"_n, initialFunds);
-            setup_fundUser(t, "charlie"_n, initialFunds);
-            setup_fundUser(t, "ethan"_n, initialFunds);
+        THEN("The donation should have zero signers") {
+            SignerMIType _signatures(code, code.value);
+            auto s = _signatures.get_index<"bycontractid"_n>();
+            auto end = s.upper_bound(contractID.value);
+            auto contractItr = find_if(s.lower_bound(contractID.value), s.upper_bound(contractID.value), [&](const SignerData& row) { return (row.drafter == owner); });
 
-            THEN("The donation should have zero signers") {
-                SignerMIType _signatures(code, code.value);
-                auto s = _signatures.get_index<"bycontractid"_n>();
-                auto end = s.upper_bound(contractID.value);
-                auto contractItr = std::find_if(s.lower_bound(contractID.value), s.upper_bound(contractID.value), [&](const SignerData& row) { return (row.drafter == owner); });
+            CHECK(contractItr == end);  // It would onlt appear in the signature table if there was at least one signature
+        }
 
-                CHECK(contractItr == end);  // It would onlt appear in the signature table if there was at least one signature
-            }
+        THEN("Alice cannot sign her own donation") {
+            asset q{s2a("1.0000 EOS")};
+            auto t = alice.trace<signdon>("alice"_n, owner, contractID, q, freq_23Hours, signerMemo);
+            CHECK(failedWith(t, error::invalidSigner));
+        }
 
-            THEN("Alice cannot sign her own donation") {
-                asset q{s2a("1.0000 EOS")};
-                auto t = alice.trace<signdon>("alice"_n, owner, contractID, q, freq_23Hours, signerMemo);
-                CHECK(failedWith(t, error::invalidSigner));
-            }
+        THEN("Bob cannot sign Alice's donation") {
+            asset q{s2a("1.0000 EOS")};
+            name signer = "bob"_n;
+            name drafter = owner;
+            auto t = bob.trace<signdon>(signer, drafter, contractID, q, freq_23Hours, signerMemo);
+            CHECK(failedWith(t, error::missingPermission.data()));
+        }
 
-            THEN("Bob cannot sign Alice's donation") {
+        WHEN("Bob registers as a power user") {
+            t.setup_setPowerUserAccount(bob);
+
+            THEN("Bob can sign Alice's donation") {
                 asset q{s2a("1.0000 EOS")};
                 name signer = "bob"_n;
                 name drafter = owner;
                 auto t = bob.trace<signdon>(signer, drafter, contractID, q, freq_23Hours, signerMemo);
-                CHECK(failedWith(t, error::missingPermission.data()));
+                expect(t, nullptr);
+                CHECK(succeeded(t));
             }
 
-            WHEN("Bob registers as a power user") {
-                setup_setPowerUserAccount(bob);
+            WHEN("Bob signs Alice's donation") {
+                asset donationAmount{s2a("1.0000 EOS")};
+                name signer = "bob"_n;
+                auto trace = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, signerMemo);
+                expect(trace, nullptr);
 
-                THEN("Bob can sign Alice's donation") {
-                    asset q{s2a("1.0000 EOS")};
-                    name signer = "bob"_n;
-                    name drafter = owner;
-                    auto t = bob.trace<signdon>(signer, drafter, contractID, q, freq_23Hours, signerMemo);
-                    expect(t, nullptr);
-                    CHECK(succeeded(t));
+                THEN("The donation should have exactly one signer") {
+                    SignerMIType _signatures(code, code.value);
+                    auto s = _signatures.get_index<"bycontractid"_n>();
+                    auto distance = std::distance(s.lower_bound(contractID.value), s.upper_bound(contractID.value));
+
+                    CHECK(distance == 1);  // "Spurious signer data"
                 }
 
-                WHEN("Bob signs Alice's donation") {
-                    asset donationAmount{s2a("1.0000 EOS")};
-                    name signer = "bob"_n;
-                    auto trace = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, signerMemo);
-                    expect(trace, nullptr);
+                THEN("The signer consumes the expected amount of RAM") {
+                    auto ramDeltas = debug::getFirstRamDeltaSummary(trace);
+                    CHECK(ramDeltas.size() == 1);            // Only one account should have a ram delta
+                    CHECK(ramDeltas[0].account == "bob"_n);  // And it should be the signer, Bob
+                    CHECK(debug::getRamDelta(ramDeltas[0], "bob"_n) == ramConsumption_bytes::firstEmplace::SignDonation);
+                }
 
-                    THEN("The donation should have exactly one signer") {
-                        SignerMIType _signatures(code, code.value);
-                        auto s = _signatures.get_index<"bycontractid"_n>();
-                        auto distance = std::distance(s.lower_bound(contractID.value), s.upper_bound(contractID.value));
+                THEN("Bob cannot sign Alice's donation again") {
+                    Memo anotherSignerMemo{"Let's subscribe again!"};
+                    auto trace2 = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, anotherSignerMemo);
+                    CHECK(failedWith(trace2, error::duplicateSigner));
+                }
 
-                        CHECK(distance == 1);  // "Spurious signer data"
-                    }
-
-                    THEN("The signer consumes the expected amount of RAM") {
-                        auto ramDeltas = getFirstRamDeltaSummary(trace);
-                        CHECK(ramDeltas.size() == 1);            // Only one account should have a ram delta
-                        CHECK(ramDeltas[0].account == "bob"_n);  // And it should be the signer, Bob
-                        CHECK(getRamDelta(ramDeltas[0], "bob"_n) == ramConsumption_bytes::firstEmplace::SignDonation);
-                    }
-
-                    THEN("Bob cannot sign Alice's donation again") {
-                        Memo anotherSignerMemo{"Let's subscribe again!"};
-                        auto trace2 = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, anotherSignerMemo);
-                        CHECK(failedWith(trace2, error::duplicateSigner));
-                    }
-
-                    THEN("The scheduled block to service the transaction should be correct") {
-                        /* Note: test_chain head block timestamp shows the timestamp of the last completed block,
+                THEN("The scheduled block to service the transaction should be correct") {
+                    /* Note: test_chain head block timestamp shows the timestamp of the last completed block,
                     current_block() in the contract shows the timestamp of the current (incomplete) block. */
 
-                        // Calculate expected service block timestamp
-                        int64_t blockTime = milliseconds(500).count();  // in microseconds
-                        int64_t lastProducedBlockTimestamp = t.get_head_block_info().timestamp.to_time_point().elapsed.count();
-                        int64_t activeBlockTimestamp = lastProducedBlockTimestamp + blockTime;
-                        int64_t serviceBlockTimestamp = activeBlockTimestamp + toMicroseconds(freq_23Hours);
+                    // Calculate expected service block timestamp
+                    int64_t blockTime = milliseconds(500).count();  // in microseconds
+                    int64_t lastProducedBlockTimestamp = t.getChain().get_head_block_info().timestamp.to_time_point().elapsed.count();
+                    int64_t activeBlockTimestamp = lastProducedBlockTimestamp + blockTime;
+                    int64_t serviceBlockTimestamp = activeBlockTimestamp + seconds(freq_23Hours.value).count();
 
-                        // Get what the contract calculated
-                        SignerMIType _signatures(code, code.value);
-                        auto s = _signatures.get_index<"bycontractid"_n>();
-                        auto end = s.upper_bound(contractID.value);
-                        auto itr = std::find_if(s.lower_bound(contractID.value), s.upper_bound(contractID.value), [&](const SignerData& row) { return (row.drafter == owner); });
-                        check(itr != end, "Contract doesn't exist? Should never happen.");
-                        int64_t contractServiceBlockTimestamp = itr->serviceBlock.to_time_point().elapsed.count();
+                    // Get what the contract calculated
+                    SignerMIType _signatures(code, code.value);
+                    auto s = _signatures.get_index<"bycontractid"_n>();
+                    auto end = s.upper_bound(contractID.value);
+                    auto itr = find_if(s.lower_bound(contractID.value), s.upper_bound(contractID.value), [&](const SignerData& row) { return (row.drafter == owner); });
+                    check(itr != end, "Contract doesn't exist? Should never happen.");
+                    int64_t contractServiceBlockTimestamp = itr->serviceBlock.to_time_point().elapsed.count();
 
-                        // Confirm they match
-                        CHECK(serviceBlockTimestamp == contractServiceBlockTimestamp);
-                    }
-
-                    THEN("Bob should have [donationAmount] less EOS") {
-                        auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
-                        CHECK(initialFunds - amount == donationAmount);
-                    }
-
-                    THEN("Alice should have [donationAmount - fee] more EOS") {
-                        // Calculate what balance Alice should have based on the donation amount
-                        asset feeAmount(static_cast<int64_t>(donationAmount.amount * fixedProps::Assets::transactionFee), symbol("EOS", 4));
-                        check(donationAmount > feeAmount, "Must be true");
-                        asset calculatedBalance = initialFunds + (donationAmount - feeAmount);
-
-                        // Get Alice's actual balance
-                        auto realBalance = token::contract::get_balance("eosio.token"_n, "alice"_n, symbol_code({"EOS"}));
-
-                        // Confirm they are equal
-                        CHECK(realBalance == calculatedBalance);
-                    }
-
-                    THEN("EPN revenue account should have [fee] more EOS") {
-                        asset feeAmount(static_cast<int64_t>(donationAmount.amount * fixedProps::Assets::transactionFee), symbol("EOS", 4));
-                        auto realBalance = token::contract::get_balance("eosio.token"_n, fixedProps::revenue_account, symbol_code({"EOS"}));
-                        CHECK(realBalance == feeAmount);
-                    }
-
-                    WHEN("Nodeos with the EPN plugin is running")
-                    {
-                        // Make all prior transactions irreversible. This causes the transactions to
-                        // go into the block log.
-                        t.finish_block();
-                        t.finish_block();
-
-                        // Copy blocks.log into a fresh directory for nodeos to use
-                        eosio::execute("rm -rf example_chain");
-                        eosio::execute("mkdir -p example_chain/blocks");
-                        eosio::execute("cp " + t.get_path() + "/blocks/blocks.log example_chain/blocks");
-
-                        // Run nodeos
-                        eosio::execute(
-                            "nodeos -d example_chain "
-                            "--config-dir example_config "
-                            "--plugin eosio::chain_api_plugin "
-                            "--plugin eosio::epn_plugin "
-                            "--access-control-allow-origin \"*\" "
-                            "--access-control-allow-header \"*\" "
-                            "--http-validate-host 0 "
-                            "--http-server-address 0.0.0.0:8888 "
-                            "--contracts-console "
-                            "-e -p eosio");
-                    }
-
-
-                    // WHEN("Less time has passed than the frequency") {
-                    //     uint32_t frequencyInBlocks = freq_23Hours.value * 2;  // Seconds to blocks, 500ms block time
-                    //     uint32_t notEnoughBlocks = frequencyInBlocks - 1;
-                    //     t.start_block(notEnoughBlocks);
-                    //     THEN("Bob has still only made one donation") {
-                    //         auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
-                    //         CHECK(initialFunds - amount == donationAmount);
-                    //     }
-                    // }
-
-                    // WHEN("Enough time has passed for one additional donation") {
-                    //     uint32_t frequencyInBlocks = freq_23Hours.value * 2;  // Seconds to blocks, 500ms block time
-                    //     t.start_block(frequencyInBlocks);
-                    //     THEN("Bob has made one more donation") {
-                    //         auto totalDonated = 2 * donationAmount;
-                    //         auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
-                    //         CHECK(initialFunds - amount == totalDonated);
-                    //     }
-                    // }
+                    // Confirm they match
+                    CHECK(serviceBlockTimestamp == contractServiceBlockTimestamp);
                 }
+
+                THEN("Bob should have [donationAmount] less EOS") {
+                    auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
+                    CHECK(initialFunds - amount == donationAmount);
+                }
+
+                THEN("Alice should have [donationAmount - fee] more EOS") {
+                    // Calculate what balance Alice should have based on the donation amount
+                    asset feeAmount(static_cast<int64_t>(donationAmount.amount * fixedProps::Assets::transactionFee), symbol("EOS", 4));
+                    check(donationAmount > feeAmount, "Must be true");
+                    asset calculatedBalance = initialFunds + (donationAmount - feeAmount);
+
+                    // Get Alice's actual balance
+                    auto realBalance = token::contract::get_balance("eosio.token"_n, "alice"_n, symbol_code({"EOS"}));
+
+                    // Confirm they are equal
+                    CHECK(realBalance == calculatedBalance);
+                }
+
+                THEN("EPN revenue account should have [fee] more EOS") {
+                    asset feeAmount(static_cast<int64_t>(donationAmount.amount * fixedProps::Assets::transactionFee), symbol("EOS", 4));
+                    auto realBalance = token::contract::get_balance("eosio.token"_n, fixedProps::revenue_account, symbol_code({"EOS"}));
+                    CHECK(realBalance == feeAmount);
+                }
+
+                WHEN("Nodeos with the EPN plugin is running") {
+                    // Make all prior transactions irreversible. This causes the transactions to
+                    // go into the block log.
+                    t.getChain().finish_block();
+                    t.getChain().finish_block();
+
+                    // Copy blocks.log into a fresh directory for nodeos to use
+                    eosio::execute("rm -rf example_chain");
+                    eosio::execute("mkdir -p example_chain/blocks");
+                    eosio::execute("cp " + t.getChain().get_path() + "/blocks/blocks.log example_chain/blocks");
+
+                    // Run nodeos
+                    eosio::execute(
+                        "nodeos -d example_chain "
+                        "--config-dir example_config "
+                        "--plugin eosio::chain_api_plugin "
+                        "--plugin eosio::epn_plugin "
+                        "--access-control-allow-origin \"*\" "
+                        "--access-control-allow-header \"*\" "
+                        "--http-validate-host 0 "
+                        "--http-server-address 0.0.0.0:8888 "
+                        "--contracts-console "
+                        "-e -p eosio");
+                }
+
+                // WHEN("Less time has passed than the frequency") {
+                //     uint32_t frequencyInBlocks = freq_23Hours.value * 2;  // Seconds to blocks, 500ms block time
+                //     uint32_t notEnoughBlocks = frequencyInBlocks - 1;
+                //     t.start_block(notEnoughBlocks);
+                //     THEN("Bob has still only made one donation") {
+                //         auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
+                //         CHECK(initialFunds - amount == donationAmount);
+                //     }
+                // }
+
+                // WHEN("Enough time has passed for one additional donation") {
+                //     uint32_t frequencyInBlocks = freq_23Hours.value * 2;  // Seconds to blocks, 500ms block time
+                //     t.start_block(frequencyInBlocks);
+                //     THEN("Bob has made one more donation") {
+                //         auto totalDonated = 2 * donationAmount;
+                //         auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
+                //         CHECK(initialFunds - amount == totalDonated);
+                //     }
+                // }
             }
         }
     }
