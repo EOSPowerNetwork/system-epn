@@ -20,6 +20,6 @@ Multi-index tables related to the drafting and signing of Donation contracts.
 ### Example
 
 | contractID  | memoSuffix | signerData |
-| -----------  | ----------- | ----------- | ----------- |
+| -----------  | ----------- | ----------- |
 | myDonation  | "Thanks, from TheCompany!"  | { [ {"Bob"_n, "1.0000 EOS", 82800, "Donation to TheCompany"}, ... ] } |
 
