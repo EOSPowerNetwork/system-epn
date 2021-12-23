@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "epn_test_chain.hpp"
+#include "epn_test_nodeos.hpp"
 #include "errormessages.hpp"
 #include "fixedprops.hpp"
 #include "helpers.hpp"
@@ -34,10 +35,10 @@ using system_epn::checks::succeeded;
 
 const vector<name> regularUsers = {"alice"_n, "bob"_n, "charlie"_n, "dan"_n};
 const vector<name> powerUsers = {"ethan"_n, "frank"_n, "gary"_n, "harry"_n};
-const system_epn::Frequency freq_23Hours{23 * 60 * 60};
 
 ///////////////////////////////////////////////////////////////////////////////////////
 constexpr auto testsuite_donations = "[Donations]";
+constexpr auto testsuite_nodeos = "[Nodeos]";
 SCENARIO("0. Data type tests:", testsuite_donations) {
     GIVEN("A valid memo") {
         constexpr string_view passing_memo = "VeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongMemo";
@@ -246,7 +247,7 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
 
         THEN("Alice cannot sign her own donation") {
             asset q{s2a("1.0000 EOS")};
-            auto t = alice.trace<signdon>("alice"_n, owner, contractID, q, freq_23Hours, signerMemo);
+            auto t = alice.trace<signdon>("alice"_n, owner, contractID, q, fixedProps::Frequency::minimum_frequency_seconds, signerMemo);
             CHECK(failedWith(t, error::invalidSigner));
         }
 
@@ -254,7 +255,7 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
             asset q{s2a("1.0000 EOS")};
             name signer = "bob"_n;
             name drafter = owner;
-            auto t = bob.trace<signdon>(signer, drafter, contractID, q, freq_23Hours, signerMemo);
+            auto t = bob.trace<signdon>(signer, drafter, contractID, q, fixedProps::Frequency::minimum_frequency_seconds, signerMemo);
             CHECK(failedWith(t, error::missingPermission.data()));
         }
 
@@ -265,7 +266,7 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
                 asset q{s2a("1.0000 EOS")};
                 name signer = "bob"_n;
                 name drafter = owner;
-                auto t = bob.trace<signdon>(signer, drafter, contractID, q, freq_23Hours, signerMemo);
+                auto t = bob.trace<signdon>(signer, drafter, contractID, q, fixedProps::Frequency::minimum_frequency_seconds, signerMemo);
                 expect(t, nullptr);
                 CHECK(succeeded(t));
             }
@@ -273,7 +274,7 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
             WHEN("Bob signs Alice's donation") {
                 asset donationAmount{s2a("1.0000 EOS")};
                 name signer = "bob"_n;
-                auto trace = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, signerMemo);
+                auto trace = bob.trace<signdon>(signer, owner, contractID, donationAmount, fixedProps::Frequency::minimum_frequency_seconds, signerMemo);
                 expect(trace, nullptr);
 
                 THEN("The donation should have exactly one signer") {
@@ -293,7 +294,7 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
 
                 THEN("Bob cannot sign Alice's donation again") {
                     Memo anotherSignerMemo{"Let's subscribe again!"};
-                    auto trace2 = bob.trace<signdon>(signer, owner, contractID, donationAmount, freq_23Hours, anotherSignerMemo);
+                    auto trace2 = bob.trace<signdon>(signer, owner, contractID, donationAmount, fixedProps::Frequency::minimum_frequency_seconds, anotherSignerMemo);
                     CHECK(failedWith(trace2, error::duplicateSigner));
                 }
 
@@ -305,7 +306,7 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
                     int64_t blockTime = milliseconds(500).count();  // in microseconds
                     int64_t lastProducedBlockTimestamp = t.getChain().get_head_block_info().timestamp.to_time_point().elapsed.count();
                     int64_t activeBlockTimestamp = lastProducedBlockTimestamp + blockTime;
-                    int64_t serviceBlockTimestamp = activeBlockTimestamp + seconds(freq_23Hours.value).count();
+                    int64_t serviceBlockTimestamp = activeBlockTimestamp + seconds(fixedProps::Frequency::minimum_frequency_seconds).count();
 
                     // Get what the contract calculated
                     SignerMIType _signatures(code, code.value);
@@ -342,54 +343,49 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
                     auto realBalance = token::contract::get_balance("eosio.token"_n, fixedProps::revenue_account, symbol_code({"EOS"}));
                     CHECK(realBalance == feeAmount);
                 }
-
-                WHEN("Nodeos with the EPN plugin is running") {
-                    // Make all prior transactions irreversible. This causes the transactions to
-                    // go into the block log.
-                    t.getChain().finish_block();
-                    t.getChain().finish_block();
-
-                    // Copy blocks.log into a fresh directory for nodeos to use
-                    eosio::execute("rm -rf example_chain");
-                    eosio::execute("mkdir -p example_chain/blocks");
-                    eosio::execute("cp " + t.getChain().get_path() + "/blocks/blocks.log example_chain/blocks");
-
-                    // Run nodeos
-                    eosio::execute(
-                        "nodeos -d example_chain "
-                        "--config-dir example_config "
-                        "--plugin eosio::chain_api_plugin "
-                        "--plugin eosio::epn_plugin "
-                        "--access-control-allow-origin \"*\" "
-                        "--access-control-allow-header \"*\" "
-                        "--http-validate-host 0 "
-                        "--http-server-address 0.0.0.0:8888 "
-                        "--contracts-console "
-                        "-e -p eosio");
-                }
-
-                // WHEN("Less time has passed than the frequency") {
-                //     uint32_t frequencyInBlocks = freq_23Hours.value * 2;  // Seconds to blocks, 500ms block time
-                //     uint32_t notEnoughBlocks = frequencyInBlocks - 1;
-                //     t.start_block(notEnoughBlocks);
-                //     THEN("Bob has still only made one donation") {
-                //         auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
-                //         CHECK(initialFunds - amount == donationAmount);
-                //     }
-                // }
-
-                // WHEN("Enough time has passed for one additional donation") {
-                //     uint32_t frequencyInBlocks = freq_23Hours.value * 2;  // Seconds to blocks, 500ms block time
-                //     t.start_block(frequencyInBlocks);
-                //     THEN("Bob has made one more donation") {
-                //         auto totalDonated = 2 * donationAmount;
-                //         auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
-                //         CHECK(initialFunds - amount == totalDonated);
-                //     }
-                // }
             }
         }
     }
+}
+
+SCENARIO("4. A draft is signed in the context of a chain running the EPN plugin", testsuite_nodeos) {
+    GIVEN("Nodeos with the EPN plugin is running") {
+        epn_test_chain t(regularUsers, powerUsers);
+        auto [alice, ethan] = t.as("alice"_n, "ethan"_n);  // Alice is regular user, ethan is power user
+
+        // Drafter drafts donation
+        auto owner = "alice"_n;
+        auto contractID = "donation1"_n;
+        auto t1 = alice.trace<draftdon>(owner, contractID, "Memo");
+        expect(t1, nullptr);
+
+        // Signer signs donation
+        name signer = "ethan"_n;
+        auto t2 = ethan.trace<signdon>(signer, owner, contractID, s2a("1.0000 EOS"), fixedProps::Frequency::minimum_frequency_seconds, "Signer Memo");
+        expect(t2, nullptr);
+
+        test_nodeos::start(t);
+    }
+
+    // WHEN("Less time has passed than the frequency") {
+    //     uint32_t frequencyInBlocks = fixedProps::Frequency::minimum_frequency_seconds.value * 2;  // Seconds to blocks, 500ms block time
+    //     uint32_t notEnoughBlocks = frequencyInBlocks - 1;
+    //     t.start_block(notEnoughBlocks);
+    //     THEN("Bob has still only made one donation") {
+    //         auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
+    //         CHECK(initialFunds - amount == donationAmount);
+    //     }
+    // }
+
+    // WHEN("Enough time has passed for one additional donation") {
+    //     uint32_t frequencyInBlocks = fixedProps::Frequency::minimum_frequency_seconds.value * 2;  // Seconds to blocks, 500ms block time
+    //     t.start_block(frequencyInBlocks);
+    //     THEN("Bob has made one more donation") {
+    //         auto totalDonated = 2 * donationAmount;
+    //         auto amount = token::contract::get_balance("eosio.token"_n, "bob"_n, symbol_code({"EOS"}));
+    //         CHECK(initialFunds - amount == totalDonated);
+    //     }
+    // }
 }
 
 // Also, I think I should write an EOS Power Network security guide, to include people in my security-related design decisions.

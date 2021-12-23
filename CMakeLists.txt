@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.16)
 ## Basic configuration -- Only set the varables in this section
 set(PROJ system_epn)
 list(APPEND FILENAMES "donations" "paycontracts")
-list(APPEND EXTRATESTFILES "helpers" "epn_test_chain")
+list(APPEND EXTRATESTFILES "helpers" "epn_test_chain" "epn_test_nodeos")
 ###################################################################
 
 
