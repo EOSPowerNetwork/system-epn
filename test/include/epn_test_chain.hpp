@@ -29,5 +29,7 @@ namespace system_epn
         void setup_createPowerUserAccounts(const std::vector<eosio::name>& powerUsers);
         void setup_system_token();
         void setup_fundUsers();
+
+        void set_abi(eosio::name ac, const char* filename, const char* expected_except = nullptr);
     };
 }  // namespace system_epn

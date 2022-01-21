@@ -60,6 +60,7 @@ epn_test_chain::epn_test_chain(const vector<name>& regularUsers, const vector<na
     // Install standard system contracts
     chain.create_code_account(token_contract_account);
     chain.set_code("eosio.token"_n, CLSDK_CONTRACTS_DIR "token.wasm");
+    set_abi("eosio.token"_n, CLSDK_CONTRACTS_DIR "token.abi");
 
     // Install main system contract accounts
     chain.create_code_account(contract_account);
@@ -75,6 +76,15 @@ epn_test_chain::epn_test_chain(const vector<name>& regularUsers, const vector<na
 
     // Distribute tokens
     setup_fundUsers();
+}
+
+void epn_test_chain::set_abi(name ac, const char* filename, const char* expected_except)
+{
+    chain.transact({action{{{ac, "active"_n}},
+                           "eosio"_n,
+                           "setabi"_n,
+                           std::make_tuple(ac, uint8_t{0}, uint8_t{0}, read_whole_file(filename))}},
+                   expected_except);
 }
 
 test_chain::user_context epn_test_chain::as(name n1) {
