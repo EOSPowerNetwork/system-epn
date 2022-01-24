@@ -361,9 +361,16 @@ SCENARIO("4. A draft is signed in the context of a chain running the EPN plugin"
 
         // Signer signs donation
         name signer = "ethan"_n;
-        auto t2 = ethan.trace<signdon>(signer, owner, contractID, s2a("1.0000 EOS"), fixedProps::Frequency::minimum_frequency_seconds, "Signer Memo");
+        auto donationAmount = s2a("1.0000 EOS");
+        auto t2 = ethan.trace<signdon>(signer, owner, contractID, donationAmount, fixedProps::Frequency::minimum_frequency_seconds, "Signer Memo");
         expect(t2, nullptr);
 
+        auto aliceAmount = token::contract::get_balance("eosio.token"_n, "alice"_n, symbol_code({"EOS"}));
+        auto ethanAmount = token::contract::get_balance("eosio.token"_n, "ethan"_n, symbol_code({"EOS"}));
+        auto aliceAdded = donationAmount - eosio::asset(static_cast<int64_t>(donationAmount.amount * fixedProps::Assets::transactionFee), donationAmount.symbol);
+        CHECK(aliceAmount == constants::user_balance + aliceAdded );
+        CHECK(ethanAmount == constants::user_balance - donationAmount );
+        
         test_nodeos::start(t);
     }
 
