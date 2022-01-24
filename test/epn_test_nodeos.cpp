@@ -16,10 +16,16 @@ namespace system_epn::test_nodeos
         eosio::execute("cp " + t.getChain().get_path() + "/blocks/blocks.log example_chain/blocks");
 
         // Run nodeos
-        int32_t ret = eosio::execute(
+        int32_t ret = 0;
+        ret = eosio::execute(
             "nodeos -d example_chain "
             "--config-dir example_config "
+            "--plugin eosio::chain_plugin "
             "--plugin eosio::chain_api_plugin "
+            "--plugin eosio::history_plugin "
+            "--plugin eosio::history_api_plugin "
+            "--plugin eosio::producer_plugin "
+            "--plugin eosio::http_plugin --verbose-http-errors "
             "--plugin eosio::epn_plugin --permission \"active\" --operator-name \"eosio\" --signing-private-key \"5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3\" "
             "--access-control-allow-origin \"*\" "
             "--access-control-allow-header \"*\" "
