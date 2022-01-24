@@ -30,6 +30,6 @@ namespace system_epn
         void setup_system_token();
         void setup_fundUsers();
 
-        void set_abi(eosio::name ac, const char* filename, const char* expected_except = nullptr);
+        eosio::transaction_trace set_abi(eosio::name ac, const char* filename, const char* expected_except = nullptr);
     };
 }  // namespace system_epn
