@@ -70,6 +70,24 @@
                     "tooltip": "Invoke Cltester on a specific test suite"
                 }
             }
+        },
+        {
+            "label": "testnodeos",
+            "type": "shell",
+            "command": "cd build && cltester -v artifacts/test-system_epn.wasm [Nodeos] -s ",
+            "args": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "statusbar": {
+                    "label": "$(diff-insert) Run nodeos",
+                    "tooltip": "Cltester sets up a custom nodeos instance"
+                }
+            }
         }
+
+
     ]
 }
