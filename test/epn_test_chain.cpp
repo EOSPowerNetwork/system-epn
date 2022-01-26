@@ -12,6 +12,11 @@ using eosio::test_chain;
 using eosio::transaction_trace;
 using std::vector;
 
+/*
+    kill nodeos: 
+        kill `ps -A | grep [n]odeos | awk '{print $1}'
+*/
+
 
 namespace
 {
@@ -69,6 +74,7 @@ epn_test_chain::epn_test_chain(const vector<name>& regularUsers, const vector<na
     // Install main system contract accounts
     chain.create_code_account(contract_account);
     chain.set_code(contract_account, "artifacts/system_epn.wasm");
+    set_abi(contract_account, "artifacts/system_epn.abi");
     chain.create_account(revenue_account);  // Todo - Eventually the revenue account will be a contract
 
     // Create user accounts
@@ -172,4 +178,38 @@ void epn_test_chain::setup_fundUsers() {
     for (auto user : allUsers) {
         chain.as("eosio"_n).act<token::actions::transfer>(system_account, user, constants::user_balance, "");
     }
+}
+
+int32_t epn_test_chain::launch_nodeos() {
+    
+    // Make all prior transactions irreversible. This causes the transactions to
+    // go into the block log.
+    chain.finish_block();
+    chain.finish_block();
+
+    // Copy blocks.log into a fresh directory for nodeos to use
+    eosio::execute("rm -rf example_chain");
+    eosio::execute("mkdir -p example_chain/blocks");
+    eosio::execute("cp " + chain.get_path() + "/blocks/blocks.log example_chain/blocks");
+
+    // Run nodeos
+    int32_t ret = 0;
+    ret = eosio::execute(
+        "nodeos -d example_chain "
+        "--config-dir example_config "
+        "--plugin eosio::chain_plugin "
+        "--plugin eosio::chain_api_plugin "
+        "--plugin eosio::history_plugin "
+        "--plugin eosio::history_api_plugin "
+        "--plugin eosio::producer_plugin "
+        "--plugin eosio::http_plugin --verbose-http-errors "
+        "--plugin eosio::epn_plugin --permission \"active\" --operator-name \"eosio\" --signing-private-key \"5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3\" "
+        "--access-control-allow-origin \"*\" "
+        "--access-control-allow-header \"*\" "
+        "--http-validate-host 0 "
+        "--http-server-address 0.0.0.0:8888 "
+        "--contracts-console "
+        "-e -p eosio");
+
+    return ret;
 }

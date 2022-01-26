@@ -11,6 +11,8 @@ namespace system_epn
 
         void setup_setPowerUserAccount(eosio::test_chain::user_context& user);
 
+        int32_t launch_nodeos();
+
         eosio::test_chain::user_context as(eosio::name);
         std::array<eosio::test_chain::user_context, 3> as(eosio::name, eosio::name, eosio::name);
         std::array<eosio::test_chain::user_context, 2> as(eosio::name, eosio::name);

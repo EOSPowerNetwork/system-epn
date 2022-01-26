@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "epn_test_chain.hpp"
-#include "epn_test_nodeos.hpp"
 #include "errormessages.hpp"
 #include "fixedprops.hpp"
 #include "helpers.hpp"
@@ -371,7 +370,7 @@ SCENARIO("4. A draft is signed in the context of a chain running the EPN plugin"
         CHECK(aliceAmount == constants::user_balance + aliceAdded );
         CHECK(ethanAmount == constants::user_balance - donationAmount );
         
-        test_nodeos::start(t);
+        t.launch_nodeos();
     }
 
     // WHEN("Less time has passed than the frequency") {
