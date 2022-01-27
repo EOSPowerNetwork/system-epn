@@ -75,7 +75,8 @@ epn_test_chain::epn_test_chain(const vector<name>& regularUsers, const vector<na
     chain.create_code_account(contract_account);
     chain.set_code(contract_account, "artifacts/system_epn.wasm");
     set_abi(contract_account, "artifacts/system_epn.abi");
-    chain.create_account(revenue_account);  // Todo - Eventually the revenue account will be a contract
+    chain.create_account(revenue_account);  // Todo - Eventually this account will be a contract
+    chain.create_account(exec_account);     // Todo - Eventually this account will be a contract
 
     // Create user accounts
     setup_createUserAccounts(regularUsers);
