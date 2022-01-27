@@ -58,7 +58,7 @@
         {
             "label": "testspecific",
             "type": "shell",
-            "command": "cd build && cltester -v artifacts/test-system_epn.wasm ${input:testsuite} -s ",
+            "command": "cd build && cltester -v artifacts/test-epn.wasm ${input:testsuite} -s ",
             "args": [],
             "group": {
                 "kind": "build",
@@ -74,7 +74,7 @@
         {
             "label": "testnodeos",
             "type": "shell",
-            "command": "cd build && cltester -v artifacts/test-system_epn.wasm [Nodeos] -s ",
+            "command": "cd build && cltester -v artifacts/test-epn.wasm [Nodeos] -s ",
             "args": [],
             "group": {
                 "kind": "build",

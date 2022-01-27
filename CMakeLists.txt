@@ -1,63 +1,8 @@
-# All cmake projects need this
 cmake_minimum_required(VERSION 3.16)
 
-###################################################################
-# Main variable configurations - Customized with each project
-## Basic configuration -- Only set the varables in this section
-set(PROJ system_epn)
-list(APPEND FILENAMES "donations" "paycontracts")
-list(APPEND EXTRATESTFILES "helpers" "epn_test_chain")
-###################################################################
-
-
-
-######################################################
-######################################################
-#        SHOULD NOT NEED TO MODIFY BELOW HERE        #
-######################################################
-######################################################
-
-
-
-###################################################################
-# Configure contract directory structure 
-set(SOURCEDIR "src/" )
-set(TESTDIR "test/" )
-set(RICARDIANDIR "ricardian/")
-list(APPEND INCLUDE_DIRS "include/" "schema/")
-###################################################################
-
-# Needed in every cmake project
+set(PROJ epn)
 project(${PROJ})
 
-## Advanced configuration -- Only change these if you know what you're doing
-### Generate test files
-string(REPLACE "${PROJ}" "${TESTDIR}test-${PROJ}.cpp" TESTNAME ${PROJ})
-foreach (testfile ${EXTRATESTFILES})
-  string(REPLACE "${testfile}" "${TESTDIR}${testfile}.cpp" temp ${testfile})
-  list(APPEND EXTRATESTFILELIST ${temp})
-endforeach()
-
-### Generate -ricardian files variable (One per entry in FILENAMES)
-foreach (var ${FILENAMES})
-  string(REPLACE "${var}" "${RICARDIANDIR}${var}-ricardian.cpp" temp ${var})
-  list(APPEND RICARDIANLIST ${temp})
-endforeach()
-
-### Generate source files variable (One per entry in FILENAMES)
-foreach (var ${FILENAMES})
-  string(REPLACE "${var}" "${SOURCEDIR}${var}.cpp" temp ${var})
-  list(APPEND SOURCELIST ${temp})
-endforeach()
-
-set(DISPATCHERFILE "${SOURCEDIR}_dispatcher.cpp")
-
-# Debug outputs
-# message("Test file: ${TESTNAME}\n")
-# message("Ricardian files: ${RICARDIANLIST}\n")
-# message("Source files: ${SOURCELIST}\n")
-
-# clsdk requires C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -68,52 +13,26 @@ find_package(clsdk REQUIRED)
 set(ARTIFACTS_DIR "artifacts")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${ARTIFACTS_DIR})
 
-# Builds main ${PROJ}.wasm contract
-# Contracts may link to either:
-#   * eosio-contract-simple-malloc: This library builds contracts with
-#     small and fast memory allocation. free() is a no-op. Most contracts
-#     should use this option.
-#   * eosio-contract-full-malloc: This library builds contracts with
-#     full memory allocation and reuse. Using this in your contract may
-#     help expose memory bugs that eosio-contract-simple-malloc hides.
-#     The downsides of eosio-contract-full-malloc are that contracts
-#     will be larger and slower.
-add_executable(${PROJ} ${SOURCELIST} ${DISPATCHERFILE} ${RICARDIANLIST})
-target_include_directories(${PROJ} PRIVATE ${INCLUDE_DIRS})
-target_link_libraries(${PROJ} eosio-contract-simple-malloc)
-
-
-# Builds ${PROJ}-debug.wasm
-#
-# This is like ${PROJ}.wasm, but includes debugging information.
-# Debug contracts can't normally be installed on chains using `set code`.
-# Instead, cltester loads them using its `-s/--subst` option.
-#
-# Create a debugging contract by linking to either
-# eosio-contract-simple-malloc-debug or eosio-contract-full-malloc-debug.
-set(DEBUG_PROJ ${PROJ}-debug)
-add_executable(${DEBUG_PROJ} ${SOURCELIST} ${DISPATCHERFILE} ${RICARDIANLIST})
-target_include_directories(${DEBUG_PROJ} PRIVATE ${INCLUDE_DIRS})
-target_link_libraries(${DEBUG_PROJ} eosio-contract-simple-malloc-debug)
-
-# Generate ${PROJ}.abi
-# This is a 2-step process:
-#   * Build ${PROJ}.abi.wasm. This must link to eosio-contract-abigen.
-#   * Run the wasm to generate the abi
-set(ABIGEN_PROJ ${PROJ}-abigen)
-add_executable(${ABIGEN_PROJ} ${DISPATCHERFILE} ${RICARDIANLIST})
-target_include_directories(${ABIGEN_PROJ} PRIVATE ${INCLUDE_DIRS})
-target_link_libraries(${ABIGEN_PROJ} eosio-contract-abigen)
-add_custom_command(TARGET ${ABIGEN_PROJ} POST_BUILD
-     COMMAND cltester ${ARTIFACTS_DIR}/${ABIGEN_PROJ}.wasm > ${ARTIFACTS_DIR}/${PROJ}.abi
- )
+add_subdirectory(contracts/system)
 
 # Builds test-${PROJ}.wasm
 # Tests must link to either cltestlib (runs faster) or cltestlib-debug
 # (shows stack traces on failure).
 set(TEST_PROJ test-${PROJ})
-add_executable(${TEST_PROJ} ${TESTNAME} ${RICARDIANLIST} ${EXTRATESTFILELIST})
-target_include_directories(${TEST_PROJ} PRIVATE ${INCLUDE_DIRS} "${TESTDIR}/include")
+
+add_executable(${TEST_PROJ}
+test/${TEST_PROJ}.cpp
+contracts/system/ricardian/donations-ricardian.cpp 
+contracts/system/ricardian/paycontracts-ricardian.cpp
+test/helpers.cpp
+test/epn_test_chain.cpp)
+
+target_include_directories(${TEST_PROJ}
+PRIVATE
+"contracts/system/include/" 
+"contracts/system/schema/"
+"test/include"
+)
 target_link_libraries(${TEST_PROJ} cltestlib-debug)
 
 # ctest rule which runs test-${PROJ}.wasm. The -v and -s
