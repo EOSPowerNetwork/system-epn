@@ -1,6 +1,7 @@
+#include <string>
+
 #include <eosio/eosio.hpp>
 #include <eosio/name.hpp>
-#include <string>
 
 #include "paycontracts.hpp"
 

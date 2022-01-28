@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "fixedprops.hpp"
+#include "core/fixedprops.hpp"
 
 namespace system_epn {
     using eosio::check;

@@ -3,10 +3,10 @@
 #include <eosio/abi.hpp>
 #include <eosio/from_json.hpp>
 
+#include "core/fixedprops.hpp"
+
 #include "epn_test_chain.hpp"
 #include "helpers.hpp"
-#include "fixedprops.hpp"
-
 
 using namespace system_epn;
 using namespace system_epn::reservedNames;

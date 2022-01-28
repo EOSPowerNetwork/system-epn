@@ -1,6 +1,4 @@
 #include "_dispatcher.hpp"
-#include "donations.hpp"
-#include "paycontracts.hpp"
 
 // Final part of the dispatcher
 EOSIO_ACTION_DISPATCHER(system_epn::actions)

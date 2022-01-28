@@ -13,35 +13,13 @@ find_package(clsdk REQUIRED)
 set(ARTIFACTS_DIR "artifacts")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${ARTIFACTS_DIR})
 
+# Import the function that adds a contract
+list(APPEND  CMAKE_MODULE_PATH ${${PROJ}_SOURCE_DIR} )
+include(add_contract)
+
 # Build projects as well
 add_subdirectory(contracts/system)
 
-# Builds test-${PROJ}.wasm
-# Tests must link to either cltestlib (runs faster) or cltestlib-debug
-# (shows stack traces on failure).
-set(TEST_PROJ test-${PROJ})
-
-add_executable(${TEST_PROJ}
-test/${TEST_PROJ}.cpp
-test/helpers.cpp
-test/epn_test_chain.cpp)
-
-target_include_directories(${TEST_PROJ}
-PRIVATE
-"contracts/system/include/" 
-"contracts/system/schema/"
-"test/include"
-)
-target_link_libraries(${TEST_PROJ} cltestlib-debug)
-
-# ctest rule which runs test-${PROJ}.wasm. The -v and -s
-# options provide detailed logging. ctest hides this detail;
-# use `ctest -V` so show it.
-enable_testing()
-add_test(
-    NAME ${PROJ}_TEST
-    COMMAND cltester ${ARTIFACTS_DIR}/${TEST_PROJ}.wasm -s
-)
 
 # These symlinks help keep absolute paths outside of the files in .vscode/
 execute_process(COMMAND ln -sf ${clsdk_DIR} ${CMAKE_CURRENT_BINARY_DIR}/clsdk)

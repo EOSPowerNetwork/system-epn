@@ -7,10 +7,10 @@
 #include <string>
 #include <vector>
 
-#include "Asset.hpp"
-#include "Frequency.hpp"
-#include "Memo.hpp"
-#include "fixedprops.hpp"
+#include "core/fixedprops.hpp"
+#include "core/schema/Asset.hpp"
+#include "core/schema/Frequency.hpp"
+#include "core/schema/Memo.hpp"
 
 namespace system_epn
 {

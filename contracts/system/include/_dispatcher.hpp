@@ -1,8 +1,9 @@
 #pragma once
 #include <tuple>
+#include "core/fixedprops.hpp"
+
 #include "ricardians.hpp"
 #include "donations.hpp"
-#include "fixedprops.hpp"
 #include "paycontracts.hpp"
 
 #define EXEC_ACTION(CLASS_NAME, ACTION_NAME)                                                                  \

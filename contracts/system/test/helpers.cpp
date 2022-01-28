@@ -1,6 +1,8 @@
-#include "helpers.hpp"
-#include "Donations.hpp"
 #include <vector>
+
+#include "system/schema/Donations.hpp"
+
+#include "helpers.hpp"
 
 using namespace std;
 using namespace eosio;

@@ -6,8 +6,10 @@
 #include <string>
 #include <utility>
 
-#include "Donations.hpp"
-#include "fixedprops.hpp"
+#include "core/fixedprops.hpp"
+
+#include "schema/Donations.hpp"
+
 
 namespace system_epn
 {

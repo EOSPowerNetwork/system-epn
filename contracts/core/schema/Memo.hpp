@@ -4,8 +4,8 @@
 #include <string>
 #include <string_view>
 
-#include "errormessages.hpp"
-#include "fixedprops.hpp"
+#include "core/errormessages.hpp"
+#include "core/fixedprops.hpp"
 
 namespace system_epn
 {

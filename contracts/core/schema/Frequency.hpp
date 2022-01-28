@@ -2,8 +2,8 @@
 #include <eosio/check.hpp>
 #include <eosio/eosio.hpp>
 
-#include "errormessages.hpp"
-#include "fixedprops.hpp"
+#include "core/errormessages.hpp"
+#include "core/fixedprops.hpp"
 
 namespace system_epn
 {

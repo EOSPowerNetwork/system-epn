@@ -8,9 +8,9 @@
 // Do not modify once contract is live
 namespace fixedProps
 {
-    static constexpr auto contract_account = "system.epn"_n;
-    static constexpr auto revenue_account = "revenue.epn"_n;
-    static constexpr auto exec_account = "exec.epn"_n;
+    constexpr auto contract_account = "system.epn"_n;
+    constexpr auto revenue_account = "revenue.epn"_n;
+    constexpr auto exec_account = "exec.epn"_n;
     
     namespace memo
     {
