@@ -4,7 +4,6 @@
 #include <string_view>
 #include <token/token.hpp>
 #include <vector>
-#include "_dispatcher.hpp"
 
 namespace system_epn
 {
@@ -14,8 +13,8 @@ namespace system_epn
 
     namespace constants
     {
-        const eosio::asset EOS_Supply = s2a("1000000.0000 EOS");
-        const eosio::asset user_balance = s2a("10000.0000 EOS");
+        const eosio::asset EOS_Supply = eosio::s2a("1000000.0000 EOS");
+        const eosio::asset user_balance = eosio::s2a("10000.0000 EOS");
     }  // namespace constants
 
     namespace reservedNames

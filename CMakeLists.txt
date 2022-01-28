@@ -13,6 +13,7 @@ find_package(clsdk REQUIRED)
 set(ARTIFACTS_DIR "artifacts")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${ARTIFACTS_DIR})
 
+# Build projects as well
 add_subdirectory(contracts/system)
 
 # Builds test-${PROJ}.wasm
@@ -22,8 +23,6 @@ set(TEST_PROJ test-${PROJ})
 
 add_executable(${TEST_PROJ}
 test/${TEST_PROJ}.cpp
-contracts/system/ricardian/donations-ricardian.cpp 
-contracts/system/ricardian/paycontracts-ricardian.cpp
 test/helpers.cpp
 test/epn_test_chain.cpp)
 

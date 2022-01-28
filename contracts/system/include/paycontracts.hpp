@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "fixedprops.hpp"
+
 namespace system_epn {
     using eosio::check;
     using eosio::contract;
@@ -16,10 +18,6 @@ namespace system_epn {
     using eosio::symbol;
     using std::string;
 
-    // Ricardian contracts live in ricardian/paycontracts-ricardian.cpp
-    extern const char* addasset_ricardian;
-    extern const char* ricardian_clause;
-
     class paycontracts : public contract {
        public:
         using eosio::contract::contract;
@@ -28,4 +26,8 @@ namespace system_epn {
 
         void addasset(const symbol& type, const name& contract, const int64_t& minAmount, const int64_t& maxAmount);
     };
+
+    namespace actions {
+        using addasset = eosio::action_wrapper<"addasset"_h, &paycontracts::addasset, fixedProps::contract_account>;
+    }
 }  // namespace system_epn

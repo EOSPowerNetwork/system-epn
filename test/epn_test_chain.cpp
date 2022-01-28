@@ -1,7 +1,12 @@
-#include "epn_test_chain.hpp"
-#include "helpers.hpp"
+#include <eosio/check.hpp>
+#include <eosio/action.hpp>
 #include <eosio/abi.hpp>
 #include <eosio/from_json.hpp>
+
+#include "epn_test_chain.hpp"
+#include "helpers.hpp"
+#include "fixedprops.hpp"
+
 
 using namespace system_epn;
 using namespace system_epn::reservedNames;
@@ -10,6 +15,10 @@ using namespace fixedProps;
 using eosio::name;
 using eosio::test_chain;
 using eosio::transaction_trace;
+using eosio::read_whole_file;
+using eosio::json_token_stream;
+using eosio::action;
+using eosio::check;
 using std::vector;
 
 /*

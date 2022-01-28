@@ -7,14 +7,11 @@
 #include <utility>
 
 #include "Donations.hpp"
+#include "fixedprops.hpp"
 
 namespace system_epn
 {
     using namespace eosio;
-
-    extern const char* draftdon_ricardian;
-    extern const char* signdon_ricardian;
-    extern const char* ricardian_clause2;
 
     // Todo - Should eventually be moved into common utility class, since it will be needed for all contract types
     void transfer(const name& from, const name& to, const permission_level& permission, const Asset& payment, const Memo& signerMemo, const Memo& drafterMemo);
@@ -29,5 +26,10 @@ namespace system_epn
         // void deletedon(const name& contractID);
         // void unsigndon(const name& contractName, const name& drafterName);
     };
+
+    namespace actions {
+        using draftdon = eosio::action_wrapper<"draftdon"_h, &donations::draftdon, fixedProps::contract_account>;
+        using signdon = eosio::action_wrapper<"signdon"_h, &donations::signdon, fixedProps::contract_account>;
+    }
 
 }  // namespace system_epn

@@ -9,5 +9,5 @@ EOSIO_ACTION_DISPATCHER(system_epn::actions)
 EOSIO_ABIGEN(actions(system_epn::actions),
              table("signers"_n, system_epn::SignerData),
              table("drafts"_n, system_epn::DrafterData),
-             ricardian_clause("Class 1 clause", system_epn::ricardian_clause),
-             ricardian_clause("Class 2 clause", system_epn::ricardian_clause2))
+             ricardian_clause("Paycontracts clause", ricardians::paycontract::ricardian_clause),
+             ricardian_clause("Donations clause", ricardians::donation::ricardian_clause))

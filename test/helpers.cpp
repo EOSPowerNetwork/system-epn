@@ -1,4 +1,5 @@
 #include "helpers.hpp"
+#include "Donations.hpp"
 #include <vector>
 
 using namespace std;

@@ -13,13 +13,13 @@ add_executable(system
 src/paycontracts.cpp 
 src/donations.cpp 
 src/_dispatcher.cpp 
-ricardian/donations-ricardian.cpp 
-ricardian/paycontracts-ricardian.cpp)
+)
 
 target_include_directories(system 
 PRIVATE 
 "include/" 
-"schema/")
+"schema/"
+"ricardian/")
 
 target_link_libraries(system eosio-contract-simple-malloc)
 
@@ -35,14 +35,13 @@ target_link_libraries(system eosio-contract-simple-malloc)
 add_executable(system-debug
 src/paycontracts.cpp 
 src/donations.cpp 
-src/_dispatcher.cpp 
-ricardian/donations-ricardian.cpp 
-ricardian/paycontracts-ricardian.cpp)
+src/_dispatcher.cpp )
 
 target_include_directories(system-debug
 PRIVATE 
 "include/" 
-"schema/")
+"schema/"
+"ricardian/")
 
 target_link_libraries(system-debug eosio-contract-simple-malloc-debug)
 
@@ -53,19 +52,15 @@ target_link_libraries(system-debug eosio-contract-simple-malloc-debug)
 #   * Run the wasm to generate the abi
 
 add_executable(system-abigen
-src/_dispatcher.cpp 
-ricardian/donations-ricardian.cpp 
-ricardian/paycontracts-ricardian.cpp)
+src/_dispatcher.cpp )
 
 target_include_directories(system-abigen
 PRIVATE
 "include/" 
-"schema/")
-
-message("Artifacts dir: ${ARTIFACTS_DIR}\n")
+"schema/"
+"ricardian/")
 
 target_link_libraries(system-abigen eosio-contract-abigen)
 add_custom_command(TARGET system-abigen POST_BUILD
     COMMAND cltester ../../${ARTIFACTS_DIR}/system-abigen.wasm > ../../${ARTIFACTS_DIR}/system.abi
-    #COMMAND ls -al && pwd
  )

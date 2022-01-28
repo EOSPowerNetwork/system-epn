@@ -1,5 +1,6 @@
 #pragma once
 #include <tuple>
+#include "ricardians.hpp"
 #include "donations.hpp"
 #include "fixedprops.hpp"
 #include "paycontracts.hpp"
@@ -16,18 +17,13 @@ namespace system_epn {
         using contract_c2 = donations;
         using fixedProps::contract_account;
 
-        using addasset = eosio::action_wrapper<"addasset"_h, &contract_c1::addasset, contract_account>;
-
-        using draftdon = eosio::action_wrapper<"draftdon"_h, &contract_c2::draftdon, contract_account>;
-        using signdon = eosio::action_wrapper<"signdon"_h, &contract_c2::signdon, contract_account>;
-
         template <typename F>
         void for_each_action(F&& f)
         {
-            f("addasset"_h, eosio::action_type_wrapper<&contract_c1::addasset>{}, addasset_ricardian, "type", "contract", "minAmount", "maxAmount");
+            f("addasset"_h, eosio::action_type_wrapper<&contract_c1::addasset>{}, ricardians::paycontract::addasset_ricardian, "type", "contract", "minAmount", "maxAmount");
 
-            f("draftdon"_h, eosio::action_type_wrapper<&contract_c2::draftdon>{}, draftdon_ricardian, "owner", "contractID", "memoSuffix");
-            f("signdon"_h, eosio::action_type_wrapper<&contract_c2::signdon>{}, signdon_ricardian, "signer", "drafter", "contractID", "quantity", "frequency", "signerMemo");
+            f("draftdon"_h, eosio::action_type_wrapper<&contract_c2::draftdon>{}, ricardians::donation::draftdon_ricardian, "owner", "contractID", "memoSuffix");
+            f("signdon"_h, eosio::action_type_wrapper<&contract_c2::signdon>{}, ricardians::donation::signdon_ricardian, "signer", "drafter", "contractID", "quantity", "frequency", "signerMemo");
         }
 
         inline bool eosio_apply(uint64_t receiver, uint64_t code, uint64_t action)

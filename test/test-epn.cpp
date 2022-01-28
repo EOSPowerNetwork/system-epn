@@ -7,6 +7,8 @@
 #include "fixedprops.hpp"
 #include "helpers.hpp"
 #include "ramconsumption.hpp"
+#include "donations.hpp"
+//#include "_dispatcher.hpp"
 
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
@@ -23,6 +25,7 @@ using eosio::asset;
 using eosio::milliseconds;
 using eosio::symbol;
 using eosio::symbol_code;
+
 using std::find_if;
 using std::string;
 using std::string_view;
