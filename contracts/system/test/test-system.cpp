@@ -1,10 +1,13 @@
+#include <eosio/tester.hpp>
 #include <eosio/asset.hpp>
+#include <eosio/eosio.hpp>
 #include <iostream>
 #include <vector>
 
 #include "core/errormessages.hpp"
 #include "core/fixedprops.hpp"
 
+#include "system/interface/include/Donations.hpp"
 #include "system/include/donations.hpp"
 
 #include "epn_test_chain.hpp"

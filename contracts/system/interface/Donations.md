@@ -1,7 +1,7 @@
 # Donations tables
 Multi-index tables related to the drafting and signing of Donation contracts.
 
-## Schema: Struct Donation
+## Interface: Struct Donation
 * Scope: Owner (Drafter of the donation pays the RAM cost for the donations table)
 
 | Name of column | Data type | Description |
@@ -9,7 +9,7 @@ Multi-index tables related to the drafting and signing of Donation contracts.
 | contractID | eosio::name | Unique ID of this donation contract in this scope |
 | memoSuffix | eosio::name | Portion of the memo specified by the drafter used when this payment contract is executed |
 
-### Schema: Struct Signature
+### Interface: Struct Signature
 | Name of column | Data type | Description |
 | ----------- | ----------- | ----------- |
 | signer | eosio::name | The account name of the signer |

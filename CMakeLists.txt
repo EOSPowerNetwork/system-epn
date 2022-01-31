@@ -9,15 +9,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Libraries for building contracts and tests
 find_package(clsdk REQUIRED)
 
+# Todo - organize artifact output
 # Set output directory
 set(ARTIFACTS_DIR "artifacts")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${ARTIFACTS_DIR})
+set(CONTRACT_ROOT "${CMAKE_CURRENT_LIST_DIR}/contracts/")
 
 # Import the function that adds a contract
 list(APPEND  CMAKE_MODULE_PATH ${${PROJ}_SOURCE_DIR} )
 include(add_contract)
 
-# Build projects as well
+# Adds core libraries
+add_subdirectory(contracts/core)
+# Adds contract directories
 add_subdirectory(contracts/system)
 
 

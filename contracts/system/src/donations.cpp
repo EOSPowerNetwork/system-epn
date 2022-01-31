@@ -1,3 +1,5 @@
+#include "donations.hpp"
+
 #include <string>
 #include <eosio/action.hpp>
 #include <eosio/eosio.hpp>
@@ -9,7 +11,10 @@
 #include "core/errormessages.hpp"
 #include "core/fixedprops.hpp"
 
-#include "donations.hpp"
+#include "interface/include/Donations.hpp"
+
+
+
 
 using namespace eosio;
 using namespace system_epn;

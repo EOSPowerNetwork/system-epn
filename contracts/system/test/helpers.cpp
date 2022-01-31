@@ -1,6 +1,7 @@
 #include <vector>
 
-#include "system/schema/Donations.hpp"
+#include "system/interface/include/Donations.hpp"
+#include "core/fixedprops.hpp"
 
 #include "helpers.hpp"
 

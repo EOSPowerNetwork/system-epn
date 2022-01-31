@@ -7,9 +7,9 @@
 #include <utility>
 
 #include "core/fixedprops.hpp"
-
-#include "schema/Donations.hpp"
-
+#include "core/data_types/include/Asset.hpp"
+#include "core/data_types/include/Frequency.hpp"
+#include "core/data_types/include/Memo.hpp"
 
 namespace system_epn
 {
