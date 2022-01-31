@@ -11,26 +11,26 @@ macro(add_contract contractName)
     # Make library for RAM interface classes
     # Release
     add_library(${contractName}-interface-lib ${INTERFACE_FILES})
-    target_link_libraries(${contractName}-interface-lib PUBLIC core eosio-contract-simple-malloc)
-    target_include_directories(${contractName}-interface-lib PRIVATE "interface/include/" ${CONTRACT_ROOT})
+    target_link_libraries(${contractName}-interface-lib PUBLIC core)
+    target_include_directories(${contractName}-interface-lib PRIVATE "interface/include/" ${CONTRACT_ROOT} ${clsdk_DIR}/eosiolib/contracts/include)
     
     # Debug
     add_library(${contractName}-interface-lib-debug ${INTERFACE_FILES})
-    target_link_libraries(${contractName}-interface-lib-debug PUBLIC core-debug eosio-contract-simple-malloc-debug)
-    target_include_directories(${contractName}-interface-lib-debug PRIVATE "interface/include/" ${CONTRACT_ROOT})
+    target_link_libraries(${contractName}-interface-lib-debug PUBLIC core-debug)
+    target_include_directories(${contractName}-interface-lib-debug PRIVATE "interface/include/" ${CONTRACT_ROOT} ${clsdk_DIR}/eosiolib/contracts/include)
 
     # Make library for this contract
     # Release
     add_library(${contractName}-lib ${CONTRACT_FILES})
-    target_link_libraries(${contractName}-lib PUBLIC core ${contractName}-interface-lib eosio-contract-simple-malloc)
-    target_include_directories(${contractName}-lib PUBLIC ${INCLUDE_DIRS})
+    target_link_libraries(${contractName}-lib PUBLIC core ${contractName}-interface-lib)
+    target_include_directories(${contractName}-lib PUBLIC ${INCLUDE_DIRS} ${clsdk_DIR}/eosiolib/contracts/include ${clsdk_DIR}/contracts/token/include)
 
     # Debug
     add_library(${contractName}-lib-debug ${CONTRACT_FILES})
-    target_link_libraries(${contractName}-lib-debug PUBLIC core-debug ${contractName}-interface-lib-debug eosio-contract-simple-malloc-debug)
-    target_include_directories(${contractName}-lib-debug PUBLIC ${INCLUDE_DIRS})
-
-
+    target_link_libraries(${contractName}-lib-debug PUBLIC core-debug ${contractName}-interface-lib-debug )
+    target_include_directories(${contractName}-lib-debug PUBLIC ${INCLUDE_DIRS} ${clsdk_DIR}/eosiolib/contracts/include ${clsdk_DIR}/contracts/token/include)
+    
+    
     # Builds contract.wasm
     # Contracts may link to either:
     #   * eosio-contract-simple-malloc: This library builds contracts with
@@ -74,7 +74,7 @@ macro(add_contract contractName)
     # Tests must link to either cltestlib (runs faster) or cltestlib-debug
     # (shows stack traces on failure).
     add_executable(test-${contractName} ${TEST_FILES} )
-    target_link_libraries(test-${contractName} core-debug cltestlib-debug )
+    target_link_libraries(test-${contractName} core-debug cltestlib-debug ${contractName}-lib-debug)
     target_include_directories(test-${contractName} PRIVATE ${INCLUDE_DIRS} "test/include/")
 
     # ctest rule which runs test-${contractName}.wasm. The -v and -s
