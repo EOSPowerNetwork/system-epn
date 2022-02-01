@@ -28,7 +28,7 @@
         {
             "label": "make and test",
             "type": "shell",
-            "command": "cd build && cmake `clsdk-cmake-args` .. && make -j $(nproc) && cltester -v artifacts/test-system.wasm [Donations] -s",
+            "command": "cd build && cmake `clsdk-cmake-args` .. && make -j $(nproc) && cltester -v artifacts/system-debug/test-system.wasm [Donations] -s",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -43,7 +43,7 @@
         {
             "label": "test",
             "type": "shell",
-            "command": "cd build && cltester -v artifacts/test-system.wasm [Donations] -s",
+            "command": "cd build && cltester -v artifacts/system-debug/test-system.wasm [Donations] -s",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -58,7 +58,7 @@
         {
             "label": "testspecific",
             "type": "shell",
-            "command": "cd build && cltester -v artifacts/test-system.wasm ${input:testsuite} -s ",
+            "command": "cd build && cltester -v artifacts/system-debug/test-system.wasm ${input:testsuite} -s ",
             "args": [],
             "group": {
                 "kind": "build",
@@ -74,7 +74,7 @@
         {
             "label": "testnodeos",
             "type": "shell",
-            "command": "cd build && cltester -v artifacts/test-system.wasm [Nodeos] -s ",
+            "command": "cd build && cltester -v artifacts/system-debug/test-system.wasm [Nodeos] -s ",
             "args": [],
             "group": {
                 "kind": "build",

@@ -8,7 +8,13 @@ macro(add_contract contractName)
     # Include directories can be the same in each contract by default
     set(INCLUDE_DIRS "include/" ${CMAKE_CURRENT_LIST_DIR} "../")
 
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${contractName})
+
     function(add_version suffix)
+
+        # Separate debug artifacts into directory
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}${suffix})
+
         # Interface libraries
         add_library(${contractName}-interface-lib${suffix}
             ${INTERFACE_FILES}
@@ -55,6 +61,8 @@ macro(add_contract contractName)
     add_version("")
     add_version("-debug")
 
+    # The rest of the artifacts in this file are debug artifacts
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}-debug)
 
     # Generate ${contractName}.abi
     # This is a 2-step process:
@@ -65,7 +73,7 @@ macro(add_contract contractName)
     target_include_directories(${contractName}-abigen PRIVATE ${INCLUDE_DIRS})
 
     add_custom_command(TARGET ${contractName}-abigen POST_BUILD
-        COMMAND cltester ../../${ARTIFACTS_DIR}/${contractName}-abigen.wasm > ../../${ARTIFACTS_DIR}/${contractName}.abi
+        COMMAND cltester ../../${ARTIFACTS_DIR}/${contractName}-debug/${contractName}-abigen.wasm > ../../${ARTIFACTS_DIR}/${contractName}/${contractName}.abi
     )
 
 

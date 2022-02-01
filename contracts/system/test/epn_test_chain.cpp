@@ -1,6 +1,6 @@
-#include <eosio/check.hpp>
-#include <eosio/action.hpp>
 #include <eosio/abi.hpp>
+#include <eosio/action.hpp>
+#include <eosio/check.hpp>
 #include <eosio/from_json.hpp>
 
 #include "core/fixedprops.hpp"
@@ -12,20 +12,19 @@ using namespace system_epn;
 using namespace system_epn::reservedNames;
 using namespace system_epn::constants;
 using namespace fixedProps;
-using eosio::name;
-using eosio::test_chain;
-using eosio::transaction_trace;
-using eosio::read_whole_file;
-using eosio::json_token_stream;
 using eosio::action;
 using eosio::check;
+using eosio::json_token_stream;
+using eosio::name;
+using eosio::read_whole_file;
+using eosio::test_chain;
+using eosio::transaction_trace;
 using std::vector;
 
 /*
     kill nodeos: 
         kill `ps -A | grep [n]odeos | awk '{print $1}'
 */
-
 
 namespace
 {
@@ -79,11 +78,11 @@ epn_test_chain::epn_test_chain(const vector<name>& regularUsers, const vector<na
     chain.create_code_account(token_contract_account);
     chain.set_code("eosio.token"_n, CLSDK_CONTRACTS_DIR "token.wasm");
     set_abi("eosio.token"_n, CLSDK_CONTRACTS_DIR "token.abi");
-    
+
     // Install main system contract accounts
     chain.create_code_account(contract_account);
-    chain.set_code(contract_account, "artifacts/system.wasm");
-    set_abi(contract_account, "artifacts/system.abi");
+    chain.set_code(contract_account, "artifacts/system/system.wasm");
+    set_abi(contract_account, "artifacts/system/system.abi");
     chain.create_account(revenue_account);  // Todo - Eventually this account will be a contract
     chain.create_account(exec_account);     // Todo - Eventually this account will be a contract
 
@@ -98,19 +97,14 @@ epn_test_chain::epn_test_chain(const vector<name>& regularUsers, const vector<na
     setup_fundUsers();
 }
 
-transaction_trace epn_test_chain::set_abi(name ac, const char* filename, const char* expected_except)
-{
+transaction_trace epn_test_chain::set_abi(name ac, const char* filename, const char* expected_except) {
     eosio::abi_def abi;
     auto abiFile = read_whole_file(filename);
     auto abiString = std::string(abiFile.begin(), abiFile.end());
     json_token_stream stream(abiString.data());
     eosio::from_json(abi, stream);
 
-    return chain.transact({action{{{ac, "active"_n}},
-                        "eosio"_n,
-                        "setabi"_n,
-                        std::make_tuple(ac, eosio::pack(abi))}},
-                expected_except);
+    return chain.transact({action{{{ac, "active"_n}}, "eosio"_n, "setabi"_n, std::make_tuple(ac, eosio::pack(abi))}}, expected_except);
 }
 
 test_chain::user_context epn_test_chain::as(name n1) {
@@ -191,7 +185,6 @@ void epn_test_chain::setup_fundUsers() {
 }
 
 int32_t epn_test_chain::launch_nodeos() {
-    
     // Make all prior transactions irreversible. This causes the transactions to
     // go into the block log.
     chain.finish_block();
