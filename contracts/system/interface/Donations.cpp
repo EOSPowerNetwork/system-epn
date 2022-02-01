@@ -19,14 +19,19 @@ namespace system_epn
     //using std::string;
     //using std::vector;
 
+    using SignerMIType = eosio::multi_index<"donsigners"_n,
+                                            DonationSignature,
+                                            indexed_by<"bysigner"_n, const_mem_fun<DonationSignature, uint64_t, &DonationSignature::get_secondary_1>>,
+                                            indexed_by<"bycontractid"_n, const_mem_fun<DonationSignature, uint64_t, &DonationSignature::get_secondary_2>>,
+                                            indexed_by<"byservblock"_n, const_mem_fun<DonationSignature, uint64_t, &DonationSignature::get_secondary_3>>>;
+
+    using DrafterMIType = eosio::multi_index<"dondrafts"_n, DonationDraft>;
+
     DonationContract::DonationContract(const name& drafter, const name& contractID)
         : drafter(drafter)
         , contractID(contractID) {
-        // Check draft exists
-        auto drafts = DrafterMIType(fixedProps::contract_account, drafter.value);
-        auto itr = drafts.find(contractID.value);
-        check(itr != drafts.end(), error::contractDNE.data());
-        _draft = *itr;
+        check(exists(drafter, contractID), error::contractDNE.data());
+        _draft = *(DrafterMIType(fixedProps::contract_account, drafter.value).find(contractID.value));
 
         // Get all signers
         SignerMIType allSignatures(fixedProps::contract_account, fixedProps::contract_account.value);
@@ -79,6 +84,12 @@ namespace system_epn
         return *itr;
     }
 
+    bool DonationContract::exists(const name& drafter, const name& contractID) {
+        auto drafts = DrafterMIType(fixedProps::contract_account, drafter.value);
+        auto itr = drafts.find(contractID.value);
+        return (itr != drafts.end());
+    }
+
     //////////////////////////////
 
     void DonationsIntf::draft(const name& owner, const name& contractID, const Memo& memoSuffix) {
@@ -105,6 +116,23 @@ namespace system_epn
     DonationSignature DonationsIntf::getSignature(const name& drafter, const name& contractID, const name& signer) {
         auto donation = DonationContract(drafter, contractID);
         return donation.getSignature(signer);
+    }
+
+    vector<DonationSignature> DonationsIntf::getAllSignatures() {
+        using std::back_inserter;
+        using std::transform;
+
+        SignerMIType allSignatures(fixedProps::contract_account, fixedProps::contract_account.value);
+        auto byContractID = allSignatures.get_index<"bycontractid"_n>();
+
+        vector<DonationSignature> _signatures;
+        transform(byContractID.cbegin(), byContractID.cend(), back_inserter(_signatures), [&](const DonationSignature& row) { return row; });
+
+        return _signatures;
+    }
+
+    bool DonationsIntf::exists(const name& drafter, const name& contractID) {
+        return DonationContract::exists(drafter, contractID);
     }
 
 }  // namespace system_epn

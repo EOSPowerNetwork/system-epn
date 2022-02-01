@@ -56,11 +56,6 @@ namespace system_epn
     };
     EOSIO_REFLECT(DonationSignature, index, signer, contractID, serviceBlock, drafter, quantity, frequency, signerMemo);
     EOSIO_COMPARE(DonationSignature);
-    using SignerMIType = eosio::multi_index<"donsigners"_n,
-                                            DonationSignature,
-                                            indexed_by<"bysigner"_n, const_mem_fun<DonationSignature, uint64_t, &DonationSignature::get_secondary_1>>,
-                                            indexed_by<"bycontractid"_n, const_mem_fun<DonationSignature, uint64_t, &DonationSignature::get_secondary_2>>,
-                                            indexed_by<"byservblock"_n, const_mem_fun<DonationSignature, uint64_t, &DonationSignature::get_secondary_3>>>;
 
     struct DonationDraft {
         // This table is scoped to the owner, so owner does not need to be part of the table
@@ -72,7 +67,6 @@ namespace system_epn
         }
     };
     EOSIO_REFLECT(DonationDraft, contractID, memoSuffix);
-    using DrafterMIType = eosio::multi_index<"dondrafts"_n, DonationDraft>;
 
     // Interface with donations tables in RAM more easily
     class DonationContract {
@@ -83,6 +77,8 @@ namespace system_epn
         Memo getMemoSuffix() const;
         size_t getNumSigners() const;
         DonationSignature getSignature(const name& signer) const;
+
+        static bool exists(const name& drafter, const name& contractID);
 
        private:
         name drafter;
@@ -100,6 +96,10 @@ namespace system_epn
         static DonationContract getDonation(const name& drafter, const name& contractID);
 
         static DonationSignature getSignature(const name& drafter, const name& contractID, const name& signer);
+
+        static std::vector<DonationSignature> getAllSignatures();
+
+        static bool exists(const name& drafter, const name& contractID);
     };
 
 }  // namespace system_epn

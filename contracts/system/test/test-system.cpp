@@ -23,10 +23,8 @@
 using namespace system_epn::actions;
 using namespace system_epn;
 using system_epn::Asset;
-using system_epn::DrafterMIType;
 using system_epn::Frequency;
 using system_epn::Memo;
-using system_epn::SignerMIType;
 
 using eosio::asset;
 using eosio::check;
@@ -155,9 +153,7 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations) {
         auto contractID = "donation1"_n;
 
         THEN("Alice's donation should not exist") {
-            DrafterMIType _drafts(code, owner.value);
-            auto donationIter = _drafts.find(contractID.value);
-            CHECK(donationIter == _drafts.end());
+            CHECK(!DonationsIntf::exists(owner, contractID));
         }
 
         WHEN("Alice creates a donation") {
@@ -167,11 +163,8 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations) {
             expect(trace, nullptr);
 
             THEN("The donation contract should exist") {
-                DrafterMIType _drafts(code, owner.value);
-                auto donationIter = _drafts.find(contractID.value);
-                CHECK(donationIter != _drafts.end());           // "Donation not saved to state"
-                CHECK(donationIter->contractID == contractID);  // "ContractID not saved properly"
-                CHECK(donationIter->memoSuffix == memo);        // "Memo not saved properly"
+                auto contract = DonationsIntf::getDonation(owner, contractID);
+                CHECK(contract.getMemoSuffix() == memo);  // "Memo not saved properly"
             }
 
             THEN("Alice is the only one whose RAM is consumed") {

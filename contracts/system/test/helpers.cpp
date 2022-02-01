@@ -51,26 +51,18 @@ void debug::dprint(std::string s) {
     printf("\n%s\n", s.c_str());
 }
 
-void debug::dump_donations(const name& scope) {
+void debug::dump_donations() {
     using namespace system_epn;
     using std::for_each;
     using std::to_string;
 
-    printf("\n ========= %s Donations ========= \n", scope.to_string().c_str());
-    system_epn::DrafterMIType _drafts(fixedProps::contract_account, scope.value);
+    printf("\n ========= Donations ========= \n");
+    auto allSigs = DonationsIntf::getAllSignatures();
 
     printf("%-12s %-12s %-12s %-12s\n", "DRAFTER", "CONTRACT ID", "SIGNER", "QUANTITY");
-    for (auto& row : _drafts) {
-        auto ID = row.contractID;
-        printf("%-12s %-12s\n", ID.to_string().c_str(), scope.to_string().c_str());
-
-        SignerMIType _signatures(fixedProps::contract_account, fixedProps::contract_account.value);
-        auto byContractID = _signatures.get_index<"bycontractid"_n>();
-        for_each(byContractID.lower_bound(ID.value), byContractID.upper_bound(ID.value), [&](const system_epn::DonationSignature& s) {
-            if (s.drafter == scope) {
-                printf("%-12s %-12s %-12s %-12s\n", " ", " ", s.signer.to_string().c_str(), to_string(s.quantity.value.amount).c_str());
-            }
-        });
-        printf("\n");
+    for (auto& row : allSigs) {
+        printf("%-12s %-12s %-12s %-12s\n", row.drafter.to_string().c_str(), row.contractID.to_string().c_str(), row.signer.to_string().c_str(),
+               to_string(row.quantity.value.amount).c_str());
     }
+    printf("\n");
 }

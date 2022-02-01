@@ -36,7 +36,7 @@ namespace system_epn
         int64_t getRamDelta(const eosio::ship_protocol::account_delta& account_delta, const name& n);
         void printRamDeltas(const transaction_trace& trace);
         void dprint(std::string s);
-        void dump_donations(const name& scope);
+        void dump_donations();
     }  // namespace debug
 
 }  // namespace system_epn
