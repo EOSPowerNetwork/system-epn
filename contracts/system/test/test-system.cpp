@@ -1,14 +1,17 @@
-#include <eosio/tester.hpp>
 #include <eosio/asset.hpp>
+#include <eosio/check.hpp>
 #include <eosio/eosio.hpp>
+#include <eosio/symbol.hpp>
+#include <eosio/tester.hpp>
+
 #include <iostream>
 #include <vector>
 
 #include "core/errormessages.hpp"
 #include "core/fixedprops.hpp"
 
-#include "system/interface/include/Donations.hpp"
 #include "system/include/donations.hpp"
+#include "system/interface/include/Donations.hpp"
 
 #include "epn_test_chain.hpp"
 #include "helpers.hpp"
@@ -26,6 +29,7 @@ using system_epn::Memo;
 using system_epn::SignerMIType;
 
 using eosio::asset;
+using eosio::check;
 using eosio::milliseconds;
 using eosio::symbol;
 using eosio::symbol_code;
@@ -243,12 +247,7 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
         alice.act<draftdon>(owner, contractID, drafterMemo);
 
         THEN("The donation should have zero signers") {
-            SignerMIType _signatures(code, code.value);
-            auto s = _signatures.get_index<"bycontractid"_n>();
-            auto end = s.upper_bound(contractID.value);
-            auto contractItr = find_if(s.lower_bound(contractID.value), s.upper_bound(contractID.value), [&](const SignerData& row) { return (row.drafter == owner); });
-
-            CHECK(contractItr == end);  // It would onlt appear in the signature table if there was at least one signature
+            CHECK(DonationsIntf::getNumSigners(owner, contractID) == 0);
         }
 
         THEN("Alice cannot sign her own donation") {
@@ -284,11 +283,7 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
                 expect(trace, nullptr);
 
                 THEN("The donation should have exactly one signer") {
-                    SignerMIType _signatures(code, code.value);
-                    auto s = _signatures.get_index<"bycontractid"_n>();
-                    auto distance = std::distance(s.lower_bound(contractID.value), s.upper_bound(contractID.value));
-
-                    CHECK(distance == 1);  // "Spurious signer data"
+                    CHECK(DonationsIntf::getNumSigners(owner, contractID) == 1);
                 }
 
                 THEN("The signer consumes the expected amount of RAM") {
@@ -314,13 +309,9 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
                     int64_t activeBlockTimestamp = lastProducedBlockTimestamp + blockTime;
                     int64_t serviceBlockTimestamp = activeBlockTimestamp + seconds(fixedProps::Frequency::minimum_frequency_seconds).count();
 
-                    // Get what the contract calculated
-                    SignerMIType _signatures(code, code.value);
-                    auto s = _signatures.get_index<"bycontractid"_n>();
-                    auto end = s.upper_bound(contractID.value);
-                    auto itr = find_if(s.lower_bound(contractID.value), s.upper_bound(contractID.value), [&](const SignerData& row) { return (row.drafter == owner); });
-                    check(itr != end, "Contract doesn't exist? Should never happen.");
-                    int64_t contractServiceBlockTimestamp = itr->serviceBlock.to_time_point().elapsed.count();
+                    // Get the actual service block timestamp from state
+                    auto row = DonationsIntf::getSignature(owner, contractID, signer);
+                    int64_t contractServiceBlockTimestamp = row.serviceBlock.to_time_point().elapsed.count();
 
                     // Confirm they match
                     CHECK(serviceBlockTimestamp == contractServiceBlockTimestamp);
@@ -374,9 +365,9 @@ SCENARIO("4. A draft is signed in the context of a chain running the EPN plugin"
         auto aliceAmount = token::contract::get_balance("eosio.token"_n, "alice"_n, symbol_code({"EOS"}));
         auto ethanAmount = token::contract::get_balance("eosio.token"_n, "ethan"_n, symbol_code({"EOS"}));
         auto aliceAdded = donationAmount - eosio::asset(static_cast<int64_t>(donationAmount.amount * fixedProps::Assets::transactionFee), donationAmount.symbol);
-        CHECK(aliceAmount == constants::user_balance + aliceAdded );
-        CHECK(ethanAmount == constants::user_balance - donationAmount );
-        
+        CHECK(aliceAmount == constants::user_balance + aliceAdded);
+        CHECK(ethanAmount == constants::user_balance - donationAmount);
+
         t.launch_nodeos();
     }
 

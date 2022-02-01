@@ -23,12 +23,12 @@ using std::string;
 void donations::draftdon(const name& owner, const name& contractID, const Memo& memoSuffix) {
     require_auth(owner);
 
-    Donations().draft(owner, contractID, memoSuffix);
+    DonationsIntf::draft(owner, contractID, memoSuffix);
 }
 
 void donations::signdon(const name& signer, const name& drafter, const name& contractID, const Asset& quantity, const Frequency& frequency, const Memo& signerMemo) {
     require_auth(signer);
-    auto contract = Donations().getDonation(drafter, contractID);
+    auto contract = DonationsIntf::getDonation(drafter, contractID);
     contract.sign(signer, quantity, frequency, signerMemo);
 
     auto signerPermission = permission_level(signer, "active"_n);  // Todo - change the permission level to whatever is specified by the signer

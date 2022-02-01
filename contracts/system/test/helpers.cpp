@@ -1,7 +1,7 @@
 #include <vector>
 
-#include "system/interface/include/Donations.hpp"
 #include "core/fixedprops.hpp"
+#include "system/interface/include/Donations.hpp"
 
 #include "helpers.hpp"
 
@@ -63,9 +63,10 @@ void debug::dump_donations(const name& scope) {
     for (auto& row : _drafts) {
         auto ID = row.contractID;
         printf("%-12s %-12s\n", ID.to_string().c_str(), scope.to_string().c_str());
+
         SignerMIType _signatures(fixedProps::contract_account, fixedProps::contract_account.value);
         auto byContractID = _signatures.get_index<"bycontractid"_n>();
-        for_each(byContractID.lower_bound(ID.value), byContractID.upper_bound(ID.value), [&](const system_epn::SignerData& s) {
+        for_each(byContractID.lower_bound(ID.value), byContractID.upper_bound(ID.value), [&](const system_epn::DonationSignature& s) {
             if (s.drafter == scope) {
                 printf("%-12s %-12s %-12s %-12s\n", " ", " ", s.signer.to_string().c_str(), to_string(s.quantity.value.amount).c_str());
             }

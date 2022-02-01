@@ -24,8 +24,8 @@ namespace system_epn
     using std::string;
     using std::vector;
 
-    struct SignerData {
-        SignerData() = default;
+    struct DonationSignature {
+        DonationSignature() = default;
 
         uint64_t primary_key() const {
             return index;
@@ -47,22 +47,22 @@ namespace system_epn
         name signer;
         name contractID;
         block_timestamp serviceBlock;
-        // Todo - I think if I make it so all donations need to be named uniquely, 
+        // Todo - I think if I make it so all donations need to be named uniquely,
         //    then I can get rid of drafter from the signer table.
         name drafter;
         Asset quantity;
         Frequency frequency;
         Memo signerMemo;
     };
-    EOSIO_REFLECT(SignerData, index, signer, contractID, serviceBlock, drafter, quantity, frequency, signerMemo);
-    EOSIO_COMPARE(SignerData);
-    using SignerMIType = eosio::multi_index<"signers"_n,
-                                            SignerData,
-                                            indexed_by<"bysigner"_n, const_mem_fun<SignerData, uint64_t, &SignerData::get_secondary_1>>,
-                                            indexed_by<"bycontractid"_n, const_mem_fun<SignerData, uint64_t, &SignerData::get_secondary_2>>,
-                                            indexed_by<"byservblock"_n, const_mem_fun<SignerData, uint64_t, &SignerData::get_secondary_3>>>;
+    EOSIO_REFLECT(DonationSignature, index, signer, contractID, serviceBlock, drafter, quantity, frequency, signerMemo);
+    EOSIO_COMPARE(DonationSignature);
+    using SignerMIType = eosio::multi_index<"donsigners"_n,
+                                            DonationSignature,
+                                            indexed_by<"bysigner"_n, const_mem_fun<DonationSignature, uint64_t, &DonationSignature::get_secondary_1>>,
+                                            indexed_by<"bycontractid"_n, const_mem_fun<DonationSignature, uint64_t, &DonationSignature::get_secondary_2>>,
+                                            indexed_by<"byservblock"_n, const_mem_fun<DonationSignature, uint64_t, &DonationSignature::get_secondary_3>>>;
 
-    struct DrafterData {
+    struct DonationDraft {
         // This table is scoped to the owner, so owner does not need to be part of the table
         name contractID;
         Memo memoSuffix;
@@ -71,8 +71,8 @@ namespace system_epn
             return contractID.value;
         }
     };
-    EOSIO_REFLECT(DrafterData, contractID, memoSuffix);
-    using DrafterMIType = eosio::multi_index<"drafts"_n, DrafterData>;
+    EOSIO_REFLECT(DonationDraft, contractID, memoSuffix);
+    using DrafterMIType = eosio::multi_index<"dondrafts"_n, DonationDraft>;
 
     // Interface with donations tables in RAM more easily
     class DonationContract {
@@ -81,18 +81,28 @@ namespace system_epn
 
         void sign(const name& signer, const Asset& quantity, const Frequency& frequency, const Memo& signerMemo);
         Memo getMemoSuffix() const;
+        size_t getNumSigners() const;
+        DonationSignature getSignature(const name& signer) const;
 
        private:
         name drafter;
         name contractID;
+
+        vector<DonationSignature> _signatures;
+        DonationDraft _draft;
     };
 
-    class Donations {
-       public:
-        void draft(const name& owner, const name& contractID, const Memo& memoSuffix);
-        DonationContract getDonation(const name& drafter, const name& contractID);
+    struct DonationsIntf {
+        static void draft(const name& owner, const name& contractID, const Memo& memoSuffix);
+
+        static size_t getNumSigners(const name& drafter, const name& contractID);
+
+        static DonationContract getDonation(const name& drafter, const name& contractID);
+
+        static DonationSignature getSignature(const name& drafter, const name& contractID, const name& signer);
     };
 
 }  // namespace system_epn
 
 // Todo - I think if I make it so all donations need to be named uniquely, then I can get rid of drafter from the signer table.
+//          And simplify all interfaces to just query by contractID

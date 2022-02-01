@@ -1,5 +1,6 @@
 # Donations tables
 Multi-index tables related to the drafting and signing of Donation contracts.
+_Todo: - Review these schemas, this document is outdated_
 
 ## Interface: Struct Donation
 * Scope: Owner (Drafter of the donation pays the RAM cost for the donations table)
@@ -16,6 +17,7 @@ Multi-index tables related to the drafting and signing of Donation contracts.
 | quantity | eosio::asset | The amount and type of token used in this donation contract |
 | frequency | uint32_t | The number of seconds between each time this contract should be serviced |
 | signerMemo | std::string | Portion of the memo specified by the signer used when this payment contract is executed |
+
 
 ### Example
 
