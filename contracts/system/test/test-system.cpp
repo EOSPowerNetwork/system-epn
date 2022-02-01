@@ -10,7 +10,7 @@
 #include "core/errormessages.hpp"
 #include "core/fixedprops.hpp"
 
-#include "system/include/donations.hpp"
+#include "system/contract/include/donations.hpp"
 #include "system/interface/include/donationsIntf.hpp"
 
 #include "epn_test_chain.hpp"

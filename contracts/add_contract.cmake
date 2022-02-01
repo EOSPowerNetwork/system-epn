@@ -6,7 +6,7 @@
 macro(add_contract contractName)
 
     # Include directories can be the same in each contract by default
-    set(INCLUDE_DIRS "include/" ${CMAKE_CURRENT_LIST_DIR} "../")
+    set(INCLUDE_DIRS "contract/include/" ${CMAKE_CURRENT_LIST_DIR} "../")
 
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${contractName})
 
@@ -48,7 +48,7 @@ macro(add_contract contractName)
         )
 
         # Contract wasm
-        add_executable(${contractName}${suffix} src/_dispatcher.cpp)
+        add_executable(${contractName}${suffix} _dispatcher.cpp)
         target_link_libraries(${contractName}${suffix}
             # eosio-contract-full-malloc${suffix} # help expose memory bugs at the expense of contract speed and size
             eosio-contract-simple-malloc${suffix}    
@@ -68,7 +68,7 @@ macro(add_contract contractName)
     # This is a 2-step process:
     #   * Build ${contractName}.abi.wasm. This must link to eosio-contract-abigen.
     #   * Run the wasm to generate the abi
-    add_executable(${contractName}-abigen src/_dispatcher.cpp)
+    add_executable(${contractName}-abigen _dispatcher.cpp)
     target_link_libraries(${contractName}-abigen eosio-contract-abigen)
     target_include_directories(${contractName}-abigen PRIVATE ${INCLUDE_DIRS})
 
