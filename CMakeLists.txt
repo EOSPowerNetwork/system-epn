@@ -13,17 +13,8 @@ find_package(clsdk REQUIRED)
 # Set output directory
 set(ARTIFACTS_DIR "artifacts")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${ARTIFACTS_DIR})
-set(CONTRACT_ROOT "${CMAKE_CURRENT_LIST_DIR}/contracts/")
 
-# Import the function that adds a contract
-list(APPEND  CMAKE_MODULE_PATH ${${PROJ}_SOURCE_DIR} )
-include(add_contract)
-
-# Adds core libraries
-add_subdirectory(contracts/core)
-# Adds contract directories
-add_subdirectory(contracts/system)
-
+add_subdirectory(contracts)
 
 # These symlinks help keep absolute paths outside of the files in .vscode/
 execute_process(COMMAND ln -sf ${clsdk_DIR} ${CMAKE_CURRENT_BINARY_DIR}/clsdk)
