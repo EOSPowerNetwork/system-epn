@@ -8,53 +8,51 @@ macro(add_contract contractName)
     # Include directories can be the same in each contract by default
     set(INCLUDE_DIRS "include/" ${CMAKE_CURRENT_LIST_DIR} "../")
 
-    # Make library for RAM interface classes
-    # Release
-    add_library(${contractName}-interface-lib ${INTERFACE_FILES})
-    target_link_libraries(${contractName}-interface-lib PUBLIC core)
-    target_include_directories(${contractName}-interface-lib PRIVATE "interface/include/" ${CONTRACT_ROOT} ${clsdk_DIR}/eosiolib/contracts/include)
+    function(add_version suffix)
+        # Interface libraries
+        add_library(${contractName}-interface-lib${suffix}
+            ${INTERFACE_FILES}
+        )
+        target_link_libraries(${contractName}-interface-lib${suffix}
+            PUBLIC
+            core${suffix}
+        )
+        target_include_directories(${contractName}-interface-lib${suffix}
+            PRIVATE
+            "interface/include/"
+            ${CONTRACT_ROOT}
+            ${clsdk_DIR}/eosiolib/contracts/include
+        )
+
+        # Contract libraries
+        add_library(${contractName}-lib${suffix}
+            ${CONTRACT_FILES}
+        )
+        target_link_libraries(${contractName}-lib${suffix}
+            PUBLIC
+            core${suffix}
+            ${contractName}-interface-lib${suffix}
+        )
+        target_include_directories(${contractName}-lib${suffix}
+            PUBLIC
+            ${INCLUDE_DIRS}
+            ${clsdk_DIR}/eosiolib/contracts/include
+            ${clsdk_DIR}/contracts/token/include
+        )
+
+        # Contract wasm
+        add_executable(${contractName}${suffix} src/_dispatcher.cpp)
+        target_link_libraries(${contractName}${suffix}
+            # eosio-contract-full-malloc${suffix} # help expose memory bugs at the expense of contract speed and size
+            eosio-contract-simple-malloc${suffix}    
+            ${contractName}-lib${suffix}
+            core${suffix}
+        )
     
-    # Debug
-    add_library(${contractName}-interface-lib-debug ${INTERFACE_FILES})
-    target_link_libraries(${contractName}-interface-lib-debug PUBLIC core-debug)
-    target_include_directories(${contractName}-interface-lib-debug PRIVATE "interface/include/" ${CONTRACT_ROOT} ${clsdk_DIR}/eosiolib/contracts/include)
+    endfunction()
 
-    # Make library for this contract
-    # Release
-    add_library(${contractName}-lib ${CONTRACT_FILES})
-    target_link_libraries(${contractName}-lib PUBLIC core ${contractName}-interface-lib)
-    target_include_directories(${contractName}-lib PUBLIC ${INCLUDE_DIRS} ${clsdk_DIR}/eosiolib/contracts/include ${clsdk_DIR}/contracts/token/include)
-
-    # Debug
-    add_library(${contractName}-lib-debug ${CONTRACT_FILES})
-    target_link_libraries(${contractName}-lib-debug PUBLIC core-debug ${contractName}-interface-lib-debug )
-    target_include_directories(${contractName}-lib-debug PUBLIC ${INCLUDE_DIRS} ${clsdk_DIR}/eosiolib/contracts/include ${clsdk_DIR}/contracts/token/include)
-    
-    
-    # Builds contract.wasm
-    # Contracts may link to either:
-    #   * eosio-contract-simple-malloc: This library builds contracts with
-    #     small and fast memory allocation. free() is a no-op. Most contracts
-    #     should use this option.
-    #   * eosio-contract-full-malloc: This library builds contracts with
-    #     full memory allocation and reuse. Using this in your contract may
-    #     help expose memory bugs that eosio-contract-simple-malloc hides.
-    #     The downsides of eosio-contract-full-malloc are that contracts
-    #     will be larger and slower.
-    add_executable(${contractName} src/_dispatcher.cpp)
-    target_link_libraries(${contractName} ${contractName}-lib core eosio-contract-simple-malloc)
-
-
-    # Builds contract-debug.wasm
-    #
-    # This is like contract.wasm, but includes debugging information.
-    # Debug contracts can't normally be installed on chains using `set code`.
-    # Instead, cltester loads them using its `-s/--subst` option.
-    #
-    # Create a debugging contract by linking to either
-    # eosio-contract-simple-malloc-debug or eosio-contract-full-malloc-debug.
-    add_executable(${contractName}-debug src/_dispatcher.cpp)
-    target_link_libraries(${contractName}-debug ${contractName}-lib-debug core-debug eosio-contract-simple-malloc-debug)
+    add_version("")
+    add_version("-debug")
 
 
     # Generate ${contractName}.abi
@@ -74,9 +72,16 @@ macro(add_contract contractName)
     # Tests must link to either cltestlib (runs faster) or cltestlib-debug
     # (shows stack traces on failure).
     add_executable(test-${contractName} ${TEST_FILES} )
-    target_link_libraries(test-${contractName} core-debug cltestlib-debug ${contractName}-lib-debug)
-    target_include_directories(test-${contractName} PRIVATE ${INCLUDE_DIRS} "test/include/")
-
+    target_link_libraries(test-${contractName}
+        cltestlib-debug     
+        core-debug
+        ${contractName}-lib-debug 
+    )
+    target_include_directories(test-${contractName}
+        PRIVATE
+        ${INCLUDE_DIRS}
+        "test/include/"
+    )
     # ctest rule which runs test-${contractName}.wasm. The -v and -s
     # options provide detailed logging. ctest hides this detail;
     # use `ctest -V` so show it.
@@ -85,7 +90,6 @@ macro(add_contract contractName)
         NAME ${contractName}_TEST
         COMMAND cltester ${ARTIFACTS_DIR}/test-${contractName}.wasm -s
     )
-
 
     set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
