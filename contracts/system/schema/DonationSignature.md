@@ -1,4 +1,4 @@
-# Interface: Struct DonationSignature
+# DonationSignature
 
 | Name of column | Data type | Description |
 | ----------- | ----------- | ----------- |
@@ -14,4 +14,5 @@
 ## Example
 
 | index | signer | contractID | serviceBlock | drafter | quantity | frequency | signerMemo |
+| -----------  | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
 | 0 | "bob"_n | "mydonation"_n | 213478929 | "alice"_n | 1.0000 EOS | 82800 | "Donation to Alice" |

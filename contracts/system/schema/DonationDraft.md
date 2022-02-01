@@ -1,4 +1,4 @@
-# Schema: DonationDraft
+# DonationDraft
 
 * Scope: Owner (Drafter of the donation pays the RAM cost for the donations table)
 
