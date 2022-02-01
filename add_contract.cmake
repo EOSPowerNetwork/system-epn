@@ -20,6 +20,7 @@ macro(add_contract contractName)
         target_include_directories(${contractName}-interface-lib${suffix}
             PRIVATE
             "interface/include/"
+            ${CMAKE_CURRENT_LIST_DIR}
             ${CONTRACT_ROOT}
             ${clsdk_DIR}/eosiolib/contracts/include
         )
