@@ -20,6 +20,8 @@ namespace system_epn
         Todo - I think if I make it so all donations need to be named uniquely, then I can get rid of drafter 
                 from the signer table and simplify all interfaces to just query by contractID
              - Rename this file to something less similar to "donations.hpp" (the contract)
+             - The purposes of these interfaces are very ambiguous. They almost do the same exact thing. Either refactor
+                into one interface, or figure out a more sensible design.
     */
 
     // Interface with donations tables in RAM more easily
@@ -27,12 +29,12 @@ namespace system_epn
        public:
         DonationContract(const eosio::name& drafter, const eosio::name& contractID);
 
+        static bool exists(const eosio::name& drafter, const eosio::name& contractID);
+
         void sign(const eosio::name& signer, const Asset& quantity, const Frequency& frequency, const Memo& signerMemo);
         Memo getMemoSuffix() const;
         size_t getNumSigners() const;
         DonationSignature getSignature(const eosio::name& signer) const;
-
-        static bool exists(const eosio::name& drafter, const eosio::name& contractID);
 
        private:
         eosio::name drafter;

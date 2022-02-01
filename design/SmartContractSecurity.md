@@ -19,3 +19,11 @@ Bad design: Make the frequency parameter an int64_t and check inside the action 
 Good design: Wrap the int64_t in a Frequency data type, and validate the value contraints as part of the Frequency constructor.
 
 When using the preferred design above, then only a couple test cases must be written to check that the construction of the Frequency data type adheres to the intended constraints, rather than including these test cases on every action that takes a frequency parameter. This also helps eliminate redundant error-checking code that could otherwise clog up action implementation, diminishing code readability.
+
+## Abstract the complexity of working with RAM
+Multi-index tables, KV tables, Singletons, even [VRAM](https://liquidapps.io/vram) are all mechanisms by which smart contracts can store and retrieve data necessary for their operation. The smart contracts themselves need data, and an interface should be built to provide that data that hides the complexity of how that data access and mutation is achieved. With  properly separated interfaces, unit tests and smart contract code can both share the interface to minimize redundancy and improve code quality.
+
+These data interfaces should also manage all the complexity of checking the validity of state updates before applying them.
+
+## Keep contracts lean
+If you test parameter validity inside data wrappers, and you keep state update validity checks in the data management interfaces, then your smart contracts will be extremely lean. The main responsibility of a smart contract is just to serve as an API call, check that the caller is authorized to make the call, and then dispatch a state update or retrieval to the data interfaces.

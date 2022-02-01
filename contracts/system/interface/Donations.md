@@ -1,27 +1,11 @@
-# Donations tables
+# Donations interfaces
+
 Multi-index tables related to the drafting and signing of Donation contracts.
-_Todo: - Review these schemas, this document is outdated_
 
-## Interface: Struct Donation
-* Scope: Owner (Drafter of the donation pays the RAM cost for the donations table)
+## Interface: DonationContract
 
-| Name of column | Data type | Description |
-| ----------- | ----------- | ----------- |
-| contractID | eosio::name | Unique ID of this donation contract in this scope |
-| memoSuffix | eosio::name | Portion of the memo specified by the drafter used when this payment contract is executed |
+A stateful object that can be created with the information necessary to uniquely identify a contract, namely the drafter and the contractID. Once created, it aggregates the draft of the contract ([DonationDraft](../schema/DonationDraft.md) object) and a vector containing all signatures ([DonationSignature](../schema/DonationSignature.md) object). and provides a helpful interface to access the various properties of this contract.
 
-### Interface: Struct Signature
-| Name of column | Data type | Description |
-| ----------- | ----------- | ----------- |
-| signer | eosio::name | The account name of the signer |
-| quantity | eosio::asset | The amount and type of token used in this donation contract |
-| frequency | uint32_t | The number of seconds between each time this contract should be serviced |
-| signerMemo | std::string | Portion of the memo specified by the signer used when this payment contract is executed |
+## Interface: DonationsIntf
 
-
-### Example
-
-| contractID  | memoSuffix | signerData |
-| -----------  | ----------- | ----------- |
-| myDonation  | "Thanks, from TheCompany!"  | { [ {"Bob"_n, "1.0000 EOS", 82800, "Donation to TheCompany"}, ... ] } |
-
+A stateless object used to query any information about Donation contracts. Often constructs a DonationContract and forwards the request.
