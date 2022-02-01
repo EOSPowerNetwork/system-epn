@@ -1,7 +1,7 @@
 #include <vector>
 
 #include "core/fixedprops.hpp"
-#include "system/interface/include/Donations.hpp"
+#include "system/interface/include/donationsIntf.hpp"
 
 #include "helpers.hpp"
 
@@ -57,7 +57,7 @@ void debug::dump_donations() {
     using std::to_string;
 
     printf("\n ========= Donations ========= \n");
-    auto allSigs = DonationsIntf::getAllSignatures();
+    auto allSigs = DonationsIntf::getAllContractSignatures();
 
     printf("%-12s %-12s %-12s %-12s\n", "DRAFTER", "CONTRACT ID", "SIGNER", "QUANTITY");
     for (auto& row : allSigs) {

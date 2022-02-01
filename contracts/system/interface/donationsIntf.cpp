@@ -1,4 +1,4 @@
-#include "Donations.hpp"
+#include "donationsIntf.hpp"
 
 #include <eosio/check.hpp>
 
@@ -14,9 +14,11 @@ namespace system_epn
     using eosio::indexed_by;
     using eosio::name;
     using eosio::seconds;
+    using std::back_inserter;
     using std::distance;
     using std::find_if;
     using std::string;
+    using std::transform;
     using std::vector;
 
     using SignerMIType = eosio::multi_index<"donsigners"_n,
@@ -27,7 +29,7 @@ namespace system_epn
 
     using DrafterMIType = eosio::multi_index<"dondrafts"_n, DonationDraft>;
 
-    DonationContract::DonationContract(const name& drafter, const name& contractID)
+    DonationsIntf::DonationsIntf(const name& drafter, const name& contractID)
         : drafter(drafter)
         , contractID(contractID) {
         check(exists(drafter, contractID), error::contractDNE.data());
@@ -41,7 +43,7 @@ namespace system_epn
         });
     }
 
-    void DonationContract::sign(const name& signer, const Asset& quantity, const Frequency& frequency, const Memo& signerMemo) {
+    void DonationsIntf::sign(const name& signer, const Asset& quantity, const Frequency& frequency, const Memo& signerMemo) {
         check(signer != drafter, error::invalidSigner.data());
         SignerMIType signatures(fixedProps::contract_account, fixedProps::contract_account.value);
 
@@ -70,27 +72,25 @@ namespace system_epn
         signatures.emplace(ram_payer, addSigner);
     }
 
-    Memo DonationContract::getMemoSuffix() const {
+    Memo DonationsIntf::getMemoSuffix() const {
         return _draft.memoSuffix;
     }
 
-    size_t DonationContract::getNumSigners() const {
+    size_t DonationsIntf::getNumSigners() const {
         return _signatures.size();
     }
 
-    DonationSignature DonationContract::getSignature(const name& signer) const {
+    DonationSignature DonationsIntf::getSignature(const name& signer) const {
         auto itr = std::find_if(_signatures.begin(), _signatures.end(), [&](const auto& signature) { return signature.signer == signer; });
         eosio::check(itr != _signatures.end(), error::invalidSigner.data());
         return *itr;
     }
 
-    bool DonationContract::exists(const name& drafter, const name& contractID) {
+    bool DonationsIntf::exists(const name& drafter, const name& contractID) {
         auto drafts = DrafterMIType(fixedProps::contract_account, drafter.value);
         auto itr = drafts.find(contractID.value);
         return (itr != drafts.end());
     }
-
-    //////////////////////////////
 
     void DonationsIntf::draft(const name& owner, const name& contractID, const Memo& memoSuffix) {
         auto drafts = DrafterMIType(fixedProps::contract_account, owner.value);
@@ -105,23 +105,7 @@ namespace system_epn
         drafts.emplace(ram_payer, configureNewDraft);  //Todo change back to ramPpayer
     }
 
-    size_t DonationsIntf::getNumSigners(const name& drafter, const name& contractID) {
-        return DonationContract(drafter, contractID).getNumSigners();
-    }
-
-    DonationContract DonationsIntf::getDonation(const name& drafter, const name& contractID) {
-        return DonationContract(drafter, contractID);
-    }
-
-    DonationSignature DonationsIntf::getSignature(const name& drafter, const name& contractID, const name& signer) {
-        auto donation = DonationContract(drafter, contractID);
-        return donation.getSignature(signer);
-    }
-
-    vector<DonationSignature> DonationsIntf::getAllSignatures() {
-        using std::back_inserter;
-        using std::transform;
-
+    vector<DonationSignature> DonationsIntf::getAllContractSignatures() {
         SignerMIType allSignatures(fixedProps::contract_account, fixedProps::contract_account.value);
         auto byContractID = allSignatures.get_index<"bycontractid"_n>();
 
@@ -129,10 +113,6 @@ namespace system_epn
         transform(byContractID.cbegin(), byContractID.cend(), back_inserter(_signatures), [&](const DonationSignature& row) { return row; });
 
         return _signatures;
-    }
-
-    bool DonationsIntf::exists(const name& drafter, const name& contractID) {
-        return DonationContract::exists(drafter, contractID);
     }
 
 }  // namespace system_epn

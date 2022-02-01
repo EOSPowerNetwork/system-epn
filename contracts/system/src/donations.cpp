@@ -1,20 +1,17 @@
 #include "donations.hpp"
 
-#include <string>
 #include <eosio/action.hpp>
 #include <eosio/eosio.hpp>
 #include <eosio/name.hpp>
 #include <eosio/print.hpp>
 #include <eosio/system.hpp>
+#include <string>
 #include <token/token.hpp>
 
 #include "core/errormessages.hpp"
 #include "core/fixedprops.hpp"
 
-#include "interface/include/Donations.hpp"
-
-
-
+#include "interface/include/donationsIntf.hpp"
 
 using namespace eosio;
 using namespace system_epn;
@@ -28,7 +25,7 @@ void donations::draftdon(const name& owner, const name& contractID, const Memo& 
 
 void donations::signdon(const name& signer, const name& drafter, const name& contractID, const Asset& quantity, const Frequency& frequency, const Memo& signerMemo) {
     require_auth(signer);
-    auto contract = DonationsIntf::getDonation(drafter, contractID);
+    auto contract = DonationsIntf(drafter, contractID);
     contract.sign(signer, quantity, frequency, signerMemo);
 
     auto signerPermission = permission_level(signer, "active"_n);  // Todo - change the permission level to whatever is specified by the signer

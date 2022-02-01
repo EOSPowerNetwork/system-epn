@@ -1,35 +1,35 @@
 #include <tuple>
 
 #include "core/fixedprops.hpp"
-#include "interface/include/Donations.hpp"
+#include "interface/include/donationsIntf.hpp"
 
-#include "ricardians.hpp"
 #include "donations.hpp"
 #include "paycontracts.hpp"
+#include "ricardians.hpp"
 
 #define EXEC_ACTION(CLASS_NAME, ACTION_NAME)                                                                  \
     case eosio::hash_name(#ACTION_NAME):                                                                      \
         executed = eosio::execute_action(eosio::name(receiver), eosio::name(code), &CLASS_NAME::ACTION_NAME); \
         break;
 
-namespace system_epn {
-
-    namespace actions {
+namespace system_epn
+{
+    namespace actions
+    {
         using contract_c1 = paycontracts;
         using contract_c2 = donations;
         using fixedProps::contract_account;
 
         template <typename F>
-        void for_each_action(F&& f)
-        {
+        void for_each_action(F&& f) {
             f("addasset"_h, eosio::action_type_wrapper<&contract_c1::addasset>{}, ricardians::paycontract::addasset_ricardian, "type", "contract", "minAmount", "maxAmount");
 
             f("draftdon"_h, eosio::action_type_wrapper<&contract_c2::draftdon>{}, ricardians::donation::draftdon_ricardian, "owner", "contractID", "memoSuffix");
-            f("signdon"_h, eosio::action_type_wrapper<&contract_c2::signdon>{}, ricardians::donation::signdon_ricardian, "signer", "drafter", "contractID", "quantity", "frequency", "signerMemo");
+            f("signdon"_h, eosio::action_type_wrapper<&contract_c2::signdon>{}, ricardians::donation::signdon_ricardian, "signer", "drafter", "contractID", "quantity", "frequency",
+              "signerMemo");
         }
 
-        inline bool eosio_apply(uint64_t receiver, uint64_t code, uint64_t action)
-        {
+        inline bool eosio_apply(uint64_t receiver, uint64_t code, uint64_t action) {
             bool executed = false;
             if (code == receiver) {
                 switch (action) {
@@ -57,7 +57,6 @@ namespace system_epn {
     }  // namespace actions
 
 }  // namespace system_epn
-
 
 // Final part of the dispatcher
 EOSIO_ACTION_DISPATCHER(system_epn::actions)

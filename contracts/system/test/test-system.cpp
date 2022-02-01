@@ -11,7 +11,7 @@
 #include "core/fixedprops.hpp"
 
 #include "system/include/donations.hpp"
-#include "system/interface/include/Donations.hpp"
+#include "system/interface/include/donationsIntf.hpp"
 
 #include "epn_test_chain.hpp"
 #include "helpers.hpp"
@@ -163,8 +163,7 @@ SCENARIO("1. A single drafter using the draftdon action", testsuite_donations) {
             expect(trace, nullptr);
 
             THEN("The donation contract should exist") {
-                auto contract = DonationsIntf::getDonation(owner, contractID);
-                CHECK(contract.getMemoSuffix() == memo);  // "Memo not saved properly"
+                CHECK(DonationsIntf(owner, contractID).getMemoSuffix() == memo);  // "Memo not saved properly"
             }
 
             THEN("Alice is the only one whose RAM is consumed") {
@@ -240,7 +239,7 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
         alice.act<draftdon>(owner, contractID, drafterMemo);
 
         THEN("The donation should have zero signers") {
-            CHECK(DonationsIntf::getNumSigners(owner, contractID) == 0);
+            CHECK(DonationsIntf(owner, contractID).getNumSigners() == 0);
         }
 
         THEN("Alice cannot sign her own donation") {
@@ -276,7 +275,7 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
                 expect(trace, nullptr);
 
                 THEN("The donation should have exactly one signer") {
-                    CHECK(DonationsIntf::getNumSigners(owner, contractID) == 1);
+                    CHECK(DonationsIntf(owner, contractID).getNumSigners() == 1);
                 }
 
                 THEN("The signer consumes the expected amount of RAM") {
@@ -303,7 +302,7 @@ SCENARIO("3. A single signer using the \"signdon\" action to sign a single donat
                     int64_t serviceBlockTimestamp = activeBlockTimestamp + seconds(fixedProps::Frequency::minimum_frequency_seconds).count();
 
                     // Get the actual service block timestamp from state
-                    auto row = DonationsIntf::getSignature(owner, contractID, signer);
+                    auto row = DonationsIntf(owner, contractID).getSignature(signer);
                     int64_t contractServiceBlockTimestamp = row.serviceBlock.to_time_point().elapsed.count();
 
                     // Confirm they match
