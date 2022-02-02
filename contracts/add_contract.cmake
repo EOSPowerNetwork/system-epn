@@ -47,14 +47,15 @@ macro(add_contract contractName)
             ${clsdk_DIR}/contracts/token/include
         )
 
-        # Contract wasm
+        # Contract wasm <-- The dispatcher should eventually be merged with the contract files once multi-class contracts are supported.
+        #                   When that happens, this target should merge with Contract libraries target
         add_executable(${contractName}${suffix} _dispatcher.cpp)
         target_link_libraries(${contractName}${suffix}
             # eosio-contract-full-malloc${suffix} # help expose memory bugs at the expense of contract speed and size
-            eosio-contract-simple-malloc${suffix}    
+            eosio-contract-simple-malloc${suffix}
             ${contractName}-lib${suffix}
-            core${suffix}
-        )
+        )    
+        # To preprocess, run "make _dispatcher.cpp.i -j $(nproc)" in the directory with the Makefile that understands the corresponding .i target
     
     endfunction()
 
@@ -84,7 +85,8 @@ macro(add_contract contractName)
     target_link_libraries(test-${contractName}
         cltestlib-debug     
         core-debug
-        ${contractName}-lib-debug 
+        #${contractName}-lib-debug 
+        ${contractName}-interface-lib-debug
     )
     target_include_directories(test-${contractName}
         PRIVATE

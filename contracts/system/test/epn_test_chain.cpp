@@ -28,7 +28,7 @@ using std::vector;
 
 namespace
 {
-    // TODO - remove these global objects once these authentication objects are moved to the public tester interface
+    // TODO - Replace with eosio/authority after the new version of clsdk
 
     struct tester_permission_level_weight {
         eosio::permission_level permission = {};
@@ -53,22 +53,6 @@ namespace
     eosio::permission_level EPNauthority{contract_account, code_permission};
 
 }  // namespace
-
-/*  Ready to delete
-test_chain::user_context epn_test_chain::setup_getPowerUser() {
-    tester_authority power_user_auth{.threshold = 1, .keys = {{test_chain::default_pub_key, 1}}, .accounts = {{{EPNauthority, 1}}}};
-    auto user{"ethan"_n};
-    // clang-format off
-    chain.transact({action{{{"eosio"_n, "active"_n}},
-                        "eosio"_n,
-                        "newaccount"_n,
-                        std::make_tuple("eosio"_n, user, power_user_auth, power_user_auth)}},
-                nullptr);
-    // clang-format on
-
-    return chain.as("ethan"_n);
-}
-*/
 
 epn_test_chain::epn_test_chain(const vector<name>& regularUsers, const vector<name>& powerUsers) {
     allUsers.insert(allUsers.end(), regularUsers.begin(), regularUsers.end());
