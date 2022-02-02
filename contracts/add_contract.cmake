@@ -16,20 +16,22 @@ macro(add_contract contractName)
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}${suffix})
 
         # Interface libraries
-        add_library(${contractName}-interface-lib${suffix}
-            ${INTERFACE_FILES}
-        )
-        target_link_libraries(${contractName}-interface-lib${suffix}
-            PUBLIC
-            core${suffix}
-        )
-        target_include_directories(${contractName}-interface-lib${suffix}
-            PRIVATE
-            "interface/include/"
-            ${CMAKE_CURRENT_LIST_DIR}
-            ${CONTRACT_ROOT}
-            ${clsdk_DIR}/eosiolib/contracts/include
-        )
+        if (DEFINED INTERFACE_FILES)
+            add_library(${contractName}-interface-lib${suffix}
+                ${INTERFACE_FILES}
+            )
+            target_link_libraries(${contractName}-interface-lib${suffix}
+                PUBLIC
+                core${suffix}
+            )
+            target_include_directories(${contractName}-interface-lib${suffix}
+                PRIVATE
+                "interface/include/"
+                ${CMAKE_CURRENT_LIST_DIR}
+                ${CONTRACT_ROOT}
+                ${clsdk_DIR}/eosiolib/contracts/include
+            )
+        endif()
 
         # Contract libraries
         add_library(${contractName}-lib${suffix}
@@ -38,8 +40,13 @@ macro(add_contract contractName)
         target_link_libraries(${contractName}-lib${suffix}
             PUBLIC
             core${suffix}
-            ${contractName}-interface-lib${suffix}
         )
+        if (DEFINED INTERFACE_FILES)
+            target_link_libraries(${contractName}-lib${suffix}
+                PUBLIC
+                ${contractName}-interface-lib${suffix}
+            )
+        endif()
         target_include_directories(${contractName}-lib${suffix}
             PUBLIC
             ${INCLUDE_DIRS}
@@ -81,26 +88,28 @@ macro(add_contract contractName)
     # Builds test-${contractName}.wasm
     # Tests must link to either cltestlib (runs faster) or cltestlib-debug
     # (shows stack traces on failure).
-    add_executable(test-${contractName} ${TEST_FILES} )
-    target_link_libraries(test-${contractName}
-        cltestlib-debug     
-        core-debug
-        #${contractName}-lib-debug 
-        ${contractName}-interface-lib-debug
-    )
-    target_include_directories(test-${contractName}
-        PRIVATE
-        ${INCLUDE_DIRS}
-        "test/include/"
-    )
-    # ctest rule which runs test-${contractName}.wasm. The -v and -s
-    # options provide detailed logging. ctest hides this detail;
-    # use `ctest -V` so show it.
-    enable_testing()
-    add_test(
-        NAME ${contractName}_TEST
-        COMMAND cltester ${ARTIFACTS_DIR}/test-${contractName}.wasm -s
-    )
+    if (DEFINED TEST_FILES)
+        add_executable(test-${contractName} ${TEST_FILES} )
+        target_link_libraries(test-${contractName}
+            cltestlib-debug     
+            core-debug
+            #${contractName}-lib-debug 
+            ${contractName}-interface-lib-debug
+        )
+        target_include_directories(test-${contractName}
+            PRIVATE
+            ${INCLUDE_DIRS}
+            "test/include/"
+        )
+        # ctest rule which runs test-${contractName}.wasm. The -v and -s
+        # options provide detailed logging. ctest hides this detail;
+        # use `ctest -V` so show it.
+        enable_testing()
+        add_test(
+            NAME ${contractName}_TEST
+            COMMAND cltester ${ARTIFACTS_DIR}/test-${contractName}.wasm -s
+        )
+    endif()
 
     set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
